@@ -1,0 +1,1560 @@
+[
+    {
+        "id": "JH75573162",
+        "demographics": {
+            "age": 58,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 16,
+            "pcwp": 22,
+            "cpo": 1.0865484109386547,
+            "papi": 1.5
+        },
+        "support_and_outcomes": {
+            "vis_score": 4,
+            "ees_ea": 0.814,
+            "escalated": 0,
+            "weaned": 1
+        }
+    },
+    {
+        "id": "JH07691259",
+        "demographics": {
+            "age": 48,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 16,
+            "pcwp": 33,
+            "cpo": 0.6073170731707317,
+            "papi": 1.5
+        },
+        "support_and_outcomes": {
+            "vis_score": 3,
+            "ees_ea": 0.329,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH38261134",
+        "demographics": {
+            "age": 19,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH08154904",
+        "demographics": {
+            "age": 56,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 22,
+            "cpo": 0.7452919438285291,
+            "papi": 6.4
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.506,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH98362864",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH08373846",
+        "demographics": {
+            "age": 30,
+            "scai": 1
+        },
+        "hemodynamics_pre": {
+            "ra": 7,
+            "pcwp": 20,
+            "cpo": 0.60790096082779,
+            "papi": 2.2857142857142856
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 0.251,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH15465693",
+        "demographics": {
+            "age": 33,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 38,
+            "cpo": 0.5534368070953437,
+            "papi": 1.4
+        },
+        "support_and_outcomes": {
+            "vis_score": 6.75,
+            "ees_ea": 0.053,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH01113519",
+        "demographics": {
+            "age": 60,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 8,
+            "pcwp": 26,
+            "cpo": 0.45735402808573533,
+            "papi": 3.25
+        },
+        "support_and_outcomes": {
+            "vis_score": 1.25,
+            "ees_ea": 0.385,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH15658247",
+        "demographics": {
+            "age": 48,
+            "scai": 1
+        },
+        "hemodynamics_pre": {
+            "ra": 6,
+            "pcwp": 16,
+            "cpo": 0.794530672579453,
+            "papi": 2.1666666666666665
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 0.582,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH55561174",
+        "demographics": {
+            "age": 65,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 28,
+            "cpo": 0.6718403547671841,
+            "papi": 1.6666666666666667
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.65,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH14559823",
+        "demographics": {
+            "age": 55,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 14,
+            "pcwp": 38,
+            "cpo": 1.141130820399113,
+            "papi": 1.8571428571428572
+        },
+        "support_and_outcomes": {
+            "vis_score": 3,
+            "ees_ea": 0.275,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH84997129",
+        "demographics": {
+            "age": 66,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 22,
+            "cpo": 0.7694235033259423,
+            "papi": 2.1
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.662,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH34989138",
+        "demographics": {
+            "age": 46,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 13,
+            "pcwp": 19,
+            "cpo": 0.461389504804139,
+            "papi": 1.1538461538461537
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 1
+        }
+    },
+    {
+        "id": "JH84995199",
+        "demographics": {
+            "age": 62,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 16,
+            "pcwp": 26,
+            "cpo": 0.406430155210643,
+            "papi": 2
+        },
+        "support_and_outcomes": {
+            "vis_score": 7.4,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH67263283",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 1
+        }
+    },
+    {
+        "id": "JH34292293",
+        "demographics": {
+            "age": 64,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 13,
+            "pcwp": 29,
+            "cpo": 0.5036954915003695,
+            "papi": 3.230769230769231
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.678,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH30973786",
+        "demographics": {
+            "age": 63,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 50,
+            "cpo": 1.2217886178861788,
+            "papi": 7
+        },
+        "support_and_outcomes": {
+            "vis_score": 11,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH23863702",
+        "demographics": {
+            "age": 54,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 21,
+            "pcwp": 28,
+            "cpo": 0.815151515151515,
+            "papi": 1.5238095238095237
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": 0.461,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH98412906",
+        "demographics": {
+            "age": 63,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 9,
+            "pcwp": 24,
+            "cpo": 0.983658536585366,
+            "papi": 3.888888888888889
+        },
+        "support_and_outcomes": {
+            "vis_score": 9,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH76609135",
+        "demographics": {
+            "age": 62,
+            "scai": 1
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 11,
+            "cpo": 0.6642498152254249,
+            "papi": 2.2
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH21637610",
+        "demographics": {
+            "age": 52,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH78989825",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH38967567",
+        "demographics": {
+            "age": 63,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 22,
+            "cpo": 0.8061197339246119,
+            "papi": 1.9333333333333333
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.444,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH44859433",
+        "demographics": {
+            "age": 52,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 22,
+            "pcwp": 25,
+            "cpo": 0.4815151515151515,
+            "papi": 1.2727272727272727
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.527,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH75643890",
+        "demographics": {
+            "age": 59,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 27,
+            "cpo": 0.7762010347376201,
+            "papi": 1
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH53672447",
+        "demographics": {
+            "age": 51,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 30,
+            "cpo": 1.0888396156688838,
+            "papi": 2.75
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.63,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH63026347",
+        "demographics": {
+            "age": 61,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 21,
+            "cpo": 0.5534589800443459,
+            "papi": 2.8
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.403,
+            "escalated": 1,
+            "weaned": 1
+        }
+    },
+    {
+        "id": "JH28885394",
+        "demographics": {
+            "age": 77,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 14,
+            "cpo": 0.7815964523281597,
+            "papi": 5.4
+        },
+        "support_and_outcomes": {
+            "vis_score": 2,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH83335363",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH41411226",
+        "demographics": {
+            "age": 53,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 30,
+            "cpo": 0.8342867701404286,
+            "papi": 1.2
+        },
+        "support_and_outcomes": {
+            "vis_score": 1.25,
+            "ees_ea": 0.462,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH48632347",
+        "demographics": {
+            "age": 50,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 9,
+            "pcwp": 27,
+            "cpo": 0.7425794530672579,
+            "papi": 1.4444444444444444
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": 0.229,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH15674223",
+        "demographics": {
+            "age": 67,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 24,
+            "pcwp": 32,
+            "cpo": 0.4635624538063562,
+            "papi": 0.7083333333333334
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.304,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH43902805",
+        "demographics": {
+            "age": 71,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 19,
+            "cpo": 0.5205764966740577,
+            "papi": 3
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": "Recorded",
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH36206579",
+        "demographics": {
+            "age": 65,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 4,
+            "pcwp": 40,
+            "cpo": 0.6347376201034737,
+            "papi": 8.5
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.279,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH99094716",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH91494273",
+        "demographics": {
+            "age": 69,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 22,
+            "pcwp": 39,
+            "cpo": 0.6036585365853658,
+            "papi": 1.3181818181818181
+        },
+        "support_and_outcomes": {
+            "vis_score": 6,
+            "ees_ea": 0.259,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH01318208",
+        "demographics": {
+            "age": 55,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 29,
+            "cpo": 0.3903917220990391,
+            "papi": 1.55
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.167,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH29098665",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH82632686",
+        "demographics": {
+            "age": 74,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 14,
+            "pcwp": 30,
+            "cpo": 0.7119733924611973,
+            "papi": 1.8571428571428572
+        },
+        "support_and_outcomes": {
+            "vis_score": 6,
+            "ees_ea": 0.198,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH75573162.1",
+        "demographics": {
+            "age": 64,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 23,
+            "cpo": 0.29827050997782706,
+            "papi": 0.41509433962264153
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.361,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH16997987",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH00919690",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH93140418",
+        "demographics": {
+            "age": 73,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 6,
+            "pcwp": 20,
+            "cpo": 0.7251441241685144,
+            "papi": 7.666666666666667
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH29184283",
+        "demographics": {
+            "age": 66,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 30,
+            "cpo": 0.680339985218034,
+            "papi": 0.65
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 1.064,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH75573162.2",
+        "demographics": {
+            "age": 64,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 24,
+            "cpo": 1.4814042867701402,
+            "papi": 1.95
+        },
+        "support_and_outcomes": {
+            "vis_score": 6.25,
+            "ees_ea": 0.175,
+            "escalated": 0,
+            "weaned": 1
+        }
+    },
+    {
+        "id": "JH79057621",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH69211513",
+        "demographics": {
+            "age": 64,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 11,
+            "pcwp": 34,
+            "cpo": 0.6183074648928306,
+            "papi": 3.5454545454545454
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": 0.57,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH85121459",
+        "demographics": {
+            "age": 56,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 28,
+            "cpo": 0.642180339985218,
+            "papi": 5
+        },
+        "support_and_outcomes": {
+            "vis_score": 14.000000000000002,
+            "ees_ea": 0.478,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH25948432",
+        "demographics": {
+            "age": 77,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 15,
+            "cpo": 0.20053215077605321,
+            "papi": 2.1
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.457,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH49236493",
+        "demographics": {
+            "age": 43,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 20,
+            "cpo": 1.1739837398373982,
+            "papi": 1.7
+        },
+        "support_and_outcomes": {
+            "vis_score": 5.25,
+            "ees_ea": 0.377,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH22227805",
+        "demographics": {
+            "age": 65,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 9,
+            "pcwp": 25,
+            "cpo": 1.1855580192165556,
+            "papi": 1.8888888888888888
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 0.479,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH79141132",
+        "demographics": {
+            "age": 22,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 10,
+            "pcwp": 22,
+            "cpo": 0.9528085735402807,
+            "papi": 2.2
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.488,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH65488010",
+        "demographics": {
+            "age": 40,
+            "scai": 1
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 20,
+            "cpo": 0.5720620842572062,
+            "papi": 5.4
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 0.616,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH84962476",
+        "demographics": {
+            "age": 36,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH21387026",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 1,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH07689575",
+        "demographics": {
+            "age": 61,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 18,
+            "pcwp": 28,
+            "cpo": 0.4629711751662971,
+            "papi": 1.2222222222222223
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH77579130",
+        "demographics": {
+            "age": 66,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 26,
+            "cpo": 0.4959349593495935,
+            "papi": 1.6666666666666667
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH46299949",
+        "demographics": {
+            "age": 66,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 14,
+            "pcwp": 18,
+            "cpo": 0.910310421286031,
+            "papi": 2.2142857142857144
+        },
+        "support_and_outcomes": {
+            "vis_score": 14.9,
+            "ees_ea": 0.484,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH99237311",
+        "demographics": {
+            "age": 58,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 5,
+            "pcwp": 25,
+            "cpo": 0.6113821138211382,
+            "papi": 6.6
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 1.121,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH49347061",
+        "demographics": {
+            "age": 68,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 23,
+            "cpo": 0.7458536585365853,
+            "papi": 1.55
+        },
+        "support_and_outcomes": {
+            "vis_score": 15,
+            "ees_ea": 0.658,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH29367733",
+        "demographics": {
+            "age": 72,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 17,
+            "pcwp": 32,
+            "cpo": 0.7609756097560976,
+            "papi": 2.235294117647059
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH73925510",
+        "demographics": {
+            "age": 19,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH69442234",
+        "demographics": {
+            "age": 69,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 33,
+            "cpo": 0.7360679970436067,
+            "papi": 2.75
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH54069296",
+        "demographics": {
+            "age": 51,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 21,
+            "pcwp": 32,
+            "cpo": 0.6541019955654102,
+            "papi": 1.3333333333333333
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.718,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH05928330",
+        "demographics": {
+            "age": 64,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 17,
+            "cpo": 0.3093865484109386,
+            "papi": 1
+        },
+        "support_and_outcomes": {
+            "vis_score": 4.2,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH99467849",
+        "demographics": {
+            "age": 72,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 22,
+            "cpo": 0.7536585365853659,
+            "papi": 0.9166666666666666
+        },
+        "support_and_outcomes": {
+            "vis_score": 8,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH43081754",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH33083044",
+        "demographics": {
+            "age": 72,
+            "scai": 3
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 27,
+            "cpo": 0.6858832224685882,
+            "papi": 2
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.252,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH39041583",
+        "demographics": {
+            "age": 34,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 16,
+            "pcwp": 31,
+            "cpo": 0.670620842572062,
+            "papi": 1.875
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH33083044.1",
+        "demographics": {
+            "age": 72,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 12,
+            "pcwp": 27,
+            "cpo": 0.6910273466371026,
+            "papi": 2
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.586,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH22417572",
+        "demographics": {
+            "age": 70,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": 15,
+            "pcwp": 25,
+            "cpo": 0.8234885439763489,
+            "papi": 2.533333333333333
+        },
+        "support_and_outcomes": {
+            "vis_score": 3.75,
+            "ees_ea": 0.677,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH26094407",
+        "demographics": {
+            "age": 66,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 20,
+            "pcwp": 27,
+            "cpo": 0.5339024390243902,
+            "papi": 1.85
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.362,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH07366370",
+        "demographics": {
+            "age": 68,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 9,
+            "pcwp": 23,
+            "cpo": 0.8144863266814485,
+            "papi": 1.6666666666666667
+        },
+        "support_and_outcomes": {
+            "vis_score": 3,
+            "ees_ea": 0.469,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH75418174",
+        "demographics": {
+            "age": 54,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 4,
+            "pcwp": 24,
+            "cpo": 0.7317073170731707,
+            "papi": 5.25
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 0.761,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH49014360",
+        "demographics": {
+            "age": 64,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 8,
+            "pcwp": 27,
+            "cpo": 0.6061788617886179,
+            "papi": 3.375
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH89628774",
+        "demographics": {
+            "age": 72,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 13,
+            "pcwp": 36,
+            "cpo": 0.6202217294900222,
+            "papi": 2.6153846153846154
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": 0.747,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH09666625",
+        "demographics": {
+            "age": 56,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 1,
+            "pcwp": 11,
+            "cpo": 0.9261419068736141,
+            "papi": 18
+        },
+        "support_and_outcomes": {
+            "vis_score": 7.5,
+            "ees_ea": 0.337,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH29673749",
+        "demographics": {
+            "age": 54,
+            "scai": 1
+        },
+        "hemodynamics_pre": {
+            "ra": 3,
+            "pcwp": 16,
+            "cpo": 1.091212121212121,
+            "papi": 6
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": 1.025,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH59669836",
+        "demographics": {
+            "age": null,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": null,
+            "pcwp": null,
+            "cpo": 0,
+            "papi": null
+        },
+        "support_and_outcomes": {
+            "vis_score": 0,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH71480018",
+        "demographics": {
+            "age": 4,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 4,
+            "pcwp": 9,
+            "cpo": 1.2768662232076866,
+            "papi": 7.25
+        },
+        "support_and_outcomes": {
+            "vis_score": 2.5,
+            "ees_ea": null,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH81667430",
+        "demographics": {
+            "age": 49,
+            "scai": 2
+        },
+        "hemodynamics_pre": {
+            "ra": 16,
+            "pcwp": 38,
+            "cpo": 0.3963414634146341,
+            "papi": 1.8125
+        },
+        "support_and_outcomes": {
+            "vis_score": 5,
+            "ees_ea": 1.009,
+            "escalated": 0,
+            "weaned": 0
+        }
+    },
+    {
+        "id": "JH73989000",
+        "demographics": {
+            "age": 33,
+            "scai": null
+        },
+        "hemodynamics_pre": {
+            "ra": 27,
+            "pcwp": 37,
+            "cpo": 0.8295639320029563,
+            "papi": 0.7777777777777778
+        },
+        "support_and_outcomes": {
+            "vis_score": 7.5,
+            "ees_ea": 0.374,
+            "escalated": 0,
+            "weaned": 0
+        }
+    }
+]
