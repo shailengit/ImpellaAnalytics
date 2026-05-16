@@ -23,6 +23,11 @@ export interface PatientData {
   impellaFlow: number; // L/min
   performanceLevel: number; // P-level
   
+  // Knowledge Base Extension
+  eesEa?: number;         // PV Loop (Ees/Ea)
+  age?: number;           // Patient age
+  scai?: string;          // SCAI Shock Stage
+  
   // Timing
   daysBetweenRhcAndImpella: number;
   
@@ -39,8 +44,6 @@ export interface PatientData {
   deltaCPO: number;
   recoveryScore: number;
 
-  // Knowledge Base Extension
-  eesEa?: number;
   escalationAlert?: boolean;
 }
 
