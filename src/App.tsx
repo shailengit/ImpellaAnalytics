@@ -16,7 +16,8 @@ import {
   Users,
   LayoutDashboard,
   ActivitySquare,
-  BookOpen
+  BookOpen,
+  Brain
 } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -28,6 +29,7 @@ import type { PatientData, AnalyticsResult } from "./types";
 import ClusteringPage from "./components/ClusteringPage";
 import PVLoopPage from "./components/PVLoopPage";
 import PVLoopPageV2 from "./components/PVLoopPageV2";
+import MortalityFeaturesPage from "./components/MortalityFeaturesPage";
 import RiskMeter from "./components/RiskMeter";
 
 export default function App() {
@@ -35,7 +37,7 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePatient, setActivePatient] = useState<PatientData | null>(null);
-  const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "pvloopv2">("dashboard");
+  const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "pvloopv2" | "mortality">("dashboard");
   const [showDeltaCPOInfo, setShowDeltaCPOInfo] = useState(false);
   const [showRiskCounterInfo, setShowRiskCounterInfo] = useState(false);
   const [showRecoveryScoreInfo, setShowRecoveryScoreInfo] = useState(false);
@@ -132,6 +134,18 @@ export default function App() {
             Patient Phenotypes
           </button>
           <button
+            onClick={() => setActivePage("mortality")}
+            className={cn(
+              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
+              activePage === "mortality"
+                ? "bg-purple-600 text-white border-purple-600"
+                : "border-dark-border hover:bg-dark-accent"
+            )}
+          >
+            <Brain size={16} className={activePage === "mortality" ? "text-purple-200" : "text-purple-400"} />
+            Mortality Features
+          </button>
+          <button
             onClick={() => window.open('/guide.html', '_blank')}
             className="flex items-center gap-2 text-sm font-medium border border-dark-border px-4 py-2 rounded-sm hover:bg-dark-accent transition-all text-dark-text-secondary"
           >
@@ -188,6 +202,16 @@ export default function App() {
               Load patient data first to view PV Loop analysis
             </div>
           )
+        ) : activePage === "mortality" ? (
+          <div className="space-y-6">
+            <button
+              onClick={() => setActivePage("dashboard")}
+              className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+            >
+              <ArrowLeft size={16} /> Back to Dashboard
+            </button>
+            <MortalityFeaturesPage />
+          </div>
         ) : (
           !data ? (
             <motion.div

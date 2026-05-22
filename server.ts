@@ -956,6 +956,44 @@ async function startServer() {
     }
   });
 
+  // Mortality Feature Importance API
+  app.get("/api/mortality-features", async (req, res) => {
+    try {
+      const cwd = process.cwd();
+      const consensusPath = path.join(cwd, "mortality_feature_consensus.csv");
+      const comparisonPath = path.join(cwd, "ml_output/feature_subset_comparison.json");
+
+      if (!fs.existsSync(consensusPath)) {
+        return res.status(404).json({ error: "Mortality feature analysis not found. Run mortality_feature_analysis.py first." });
+      }
+
+      // Read consensus CSV
+      const csvContent = fs.readFileSync(consensusPath, "utf8");
+      const lines = csvContent.trim().split("\n");
+      const headers = lines[0].split(",");
+      const features = lines.slice(1).filter(l => l.trim()).map(line => {
+        const vals = line.split(",");
+        const row: Record<string, any> = {};
+        headers.forEach((h, i) => {
+          const v = vals[i]?.trim();
+          row[h.trim()] = isNaN(Number(v)) ? v : Number(v);
+        });
+        return row;
+      });
+
+      // Read comparison results if available
+      let comparison = null;
+      if (fs.existsSync(comparisonPath)) {
+        comparison = JSON.parse(fs.readFileSync(comparisonPath, "utf8"));
+      }
+
+      res.json({ features: features.slice(0, 50), comparison });
+    } catch (err) {
+      console.error("Mortality features error:", err);
+      res.status(500).json({ error: "Failed to load mortality feature data" });
+    }
+  });
+
   // PV Loop Analysis API
   app.get("/api/pv-loop-data", async (req, res) => {
     try {
