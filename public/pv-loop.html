@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impella Analytics — PV Loop Analysis</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #111827;
+      --border: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --amber: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.5px; }
+    header p { margin: 0.5rem 0 0; color: var(--muted); font-size: 1rem; }
+
+    nav.toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      padding: 1.5rem 0 0;
+    }
+
+    nav.toc a {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      transition: 0.2s;
+    }
+
+    nav.toc a:hover { border-color: var(--accent); color: var(--text); }
+
+    h2 {
+      font-size: 1.3rem;
+      margin-top: 2.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin-top: 1.8rem;
+      color: var(--accent-2);
+    }
+
+    h4 {
+      font-size: 1rem;
+      margin-top: 1.4rem;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin: 1rem 0;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); }
+    .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-danger  { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .badge-info    { background: rgba(59,130,246,0.15); color: var(--accent-2); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.4px;
+    }
+
+    .img-responsive {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    .loading { color: var(--muted); font-style: italic; }
+    .error { color: var(--danger); }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .metric-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-2);
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .coeff-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.4rem 0;
+      font-size: 0.9rem;
+    }
+
+    .coeff-label { width: 80px; text-align: right; color: var(--muted); }
+    .coeff-track {
+      flex: 1;
+      height: 18px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .coeff-fill {
+      height: 100%;
+      border-radius: 4px;
+      position: absolute;
+      top: 0;
+    }
+    .coeff-fill.positive { background: var(--danger); left: 50%; }
+    .coeff-fill.negative { background: var(--success); right: 50%; }
+    .coeff-value { width: 50px; text-align: left; font-variant-numeric: tabular-nums; }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .explain-block {
+      background: rgba(59,130,246,0.08);
+      border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .explain-block h4 {
+      margin-top: 0;
+      color: var(--accent-2);
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 640px) {
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>PV Loop Analysis</h1>
+  <p>Ventriculo-Arterial Coupling (Ees/Ea) and MCS Escalation Risk</p>
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#scatter">Scatter Plot</a>
+    <a href="#regression">Regression</a>
+    <a href="#shap">SHAP</a>
+    <a href="#patients">Per-Patient</a>
+  </nav>
+</header>
+
+<div class="container">
+  <a href="/" class="back-link">&larr; Back to Dashboard</a>
+
+  <div id="status" class="loading">Loading analysis data...</div>
+
+  <section id="overview" style="display:none">
+    <h2>1. Overview</h2>
+    <div class="card">
+      <p>
+        This page explores the relationship between <strong>PV loop mechanics</strong> and the risk of
+        <strong>MCS escalation</strong> (ECMO, LVAD, transplant, or post-implant arrest). The key metric is
+        <strong>Ees/Ea</strong> (ventriculo-arterial coupling ratio), which measures how well the left ventricle's
+        contractility matches the arterial afterload.
+      </p>
+      <p>
+        <span class="badge badge-info">Interpretable Model</span>
+        A focused <strong>logistic regression</strong> was trained using only PV loop variables
+        (Ees, Ea, Ees/Ea, ESP, EDP, Pmax). Logistic regression is the correct choice here because
+        MCS Escalation is a <strong>binary outcome</strong> (yes/no), not a continuous number.
+        Linear regression would predict meaningless values outside the 0–1 probability range.
+      </p>
+    </div>
+
+    <div class="metric-grid" id="metrics"></div>
+  </section>
+
+  <section id="thresholds" style="display:none">
+    <h2>2. Ees/Ea Threshold Badge</h2>
+    <div class="card">
+      <p>For bedside triage, we define three zones based on pre-implant Ees/Ea:</p>
+      <table>
+        <tr><th>Zone</th><th>Ees/Ea Range</th><th>Meaning</th><th>Action</th></tr>
+        <tr>
+          <td><span class="badge badge-danger">Poor Coupling</span></td>
+          <td>&lt; 0.40</td>
+          <td>Contractility is low relative to afterload. The LV is struggling to overcome vascular resistance.</td>
+          <td>High suspicion for escalation. Pre-position ECMO cart. Alert cardiac surgery early.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">Borderline</span></td>
+          <td>0.40 – 0.60</td>
+          <td>Coupling is marginal. Some patients tolerate Impella alone; others need escalation.</td>
+          <td>Increase monitoring frequency. Have RV inotropes and vasodilators ready.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-success">Adequate</span></td>
+          <td>&gt; 0.60</td>
+          <td>Contractility and afterload are reasonably matched.</td>
+          <td>Standard Impella support and routine surveillance.</td>
+        </tr>
+      </table>
+      <p style="color:var(--muted); font-size:0.85rem; margin-top:0.5rem">
+        These thresholds are clinical rules, not predictions. They summarize observed patterns in the cohort
+        and should be used alongside the full predictive model and clinical judgment.
+      </p>
+    </div>
+  </section>
+
+  <section id="scatter" style="display:none">
+    <h2>3. Scatter Plot: Ees/Ea vs Escalation</h2>
+    <div class="card">
+      <img id="scatter-img" class="img-responsive" alt="Ees/Ea vs MCS Escalation scatter plot" />
+
+      <div class="explain-block">
+        <h4>How to Read This Plot</h4>
+        <p><strong>X-axis:</strong> Ees/Ea (ventriculo-arterial coupling ratio). Lower values mean the LV is weak relative to the arterial resistance it faces.</p>
+        <p><strong>Y-axis:</strong> Probability of MCS Escalation, ranging from 0 (definitely will not escalate) to 1 (definitely will escalate).</p>
+        <ul>
+          <li><strong>Green circles</strong> — Patients who did <em>not</em> need escalation (ECMO, LVAD, transplant, or arrest). They cluster mostly on the right side (higher Ees/Ea).</li>
+          <li><strong>Red X's</strong> — Patients who <em>did</em> escalate. They appear more on the left side (lower Ees/Ea), though there is overlap.</li>
+          <li><strong>Blue curve</strong> — Logistic regression fit. It is S-shaped, not straight. At very low Ees/Ea the probability flattens near 1; at very high Ees/Ea it flattens near 0.</li>
+          <li><strong>Yellow dashed line (0.40)</strong> — The "Poor Coupling" threshold. To the left of this line, most patients have elevated escalation probability.</li>
+          <li><strong>Green dashed line (0.60)</strong> — The "Adequate Coupling" threshold. To the right of this line, escalation probability is generally low.</li>
+        </ul>
+        <p><strong>Clinical takeaway:</strong> Lower Ees/Ea is directionally associated with higher escalation risk, but the relationship is moderate (AUC 0.59 for Ees/Ea alone). Many patients with low coupling never escalate, and some with high coupling do. This is why the PV-loop-only model is a screening tool, not a definitive predictor.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="regression" style="display:none">
+    <h2>4. PV-Loop-Only Logistic Regression</h2>
+    <div class="card">
+      <p>
+        Model trained on <strong>only PV loop variables</strong> to predict MCS Escalation.
+        This is intentionally narrow — it tells us how much escalation risk is explainable
+        from ventricular mechanics alone, before adding echo, labs, or inotropes.
+      </p>
+      <div id="regression-metrics"></div>
+      <h3>Coefficients (Standardized)</h3>
+      <p style="font-size:0.85rem; color:var(--muted)">
+        Red bars push the prediction <em>toward</em> escalation. Green bars push it <em>away</em>.
+        All features were z-score standardized, so coefficients are directly comparable.
+      </p>
+      <div id="coefficients"></div>
+      <img id="coeff-img" class="img-responsive" alt="Coefficient bar chart" />
+
+      <div class="explain-block">
+        <h4>How to Read the Coefficients</h4>
+        <p><strong>What is a coefficient?</strong> In logistic regression, a coefficient tells you how much the <em>log-odds</em> of escalation change when the feature increases by one standard deviation.</p>
+        <ul>
+          <li><strong>Positive coefficient (red bar):</strong> Higher values of this feature push the prediction <em>toward</em> escalation.</li>
+          <li><strong>Negative coefficient (green bar):</strong> Higher values push the prediction <em>away</em> from escalation.</li>
+          <li><strong>Odds Ratio (OR):</strong> For every 1-SD increase in the feature, the odds of escalation multiply by the OR. OR &gt; 1 means risk increases; OR &lt; 1 means risk decreases.</li>
+        </ul>
+        <p><strong>Example interpretation:</strong> Ees/Ea has a coefficient of <strong>−0.65</strong> and OR of <strong>0.52</strong>. This means: for every 1-standard-deviation decrease in Ees/Ea, the odds of escalation roughly double (because 1/0.52 ≈ 1.92). In plain language: worse ventriculo-arterial coupling → higher escalation risk.</p>
+        <p><strong>Important caveat:</strong> Because all features were standardized, the coefficient magnitude reflects relative importance <em>within this 6-feature model</em>. Ees/Ea has the largest magnitude here, but when placed alongside 173 other clinical variables in the full model, its rank drops to #31.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Why Logistic Regression — Not Linear Regression</h3>
+      <p>MCS Escalation is a <strong>binary outcome</strong> (yes/no). Linear regression is the wrong tool for three reasons:</p>
+      <ol>
+        <li><strong>Predictions can be nonsensical.</strong> A linear model might output −0.3 or 1.4 for a probability. Probabilities must stay between 0 and 1. Logistic regression enforces this naturally via the S-shaped sigmoid function.</li>
+        <li><strong>It assumes a straight-line relationship.</strong> Biology is not linear. When Ees/Ea is very low, escalation probability plateaus near 1. When it is very high, it plateaus near 0. In the middle, the relationship curves. A straight line cannot capture this.</li>
+        <li><strong>Statistical assumptions are violated.</strong> Linear regression assumes residuals are normally distributed with constant variance. With a binary outcome, residuals are either 0 or 1 minus the prediction — they are not normal, and their variance changes with the predicted value. This makes p-values and confidence intervals unreliable.</li>
+      </ol>
+      <p><strong>Logistic regression asks the right question:</strong> "How much does Ees/Ea change the <em>odds</em of escalation happening?" It models probability directly, produces valid statistics, and guarantees predictions stay in [0, 1].</p>
+    </div>
+  </section>
+
+  <section id="shap" style="display:none">
+    <h2>5. SHAP Explainability</h2>
+    <div class="card">
+      <p>
+        SHAP (SHapley Additive exPlanations) shows how much each feature contributed to the
+        <strong>full escalation model</strong> (RandomForest, AUC 0.86). The plots below reveal where
+        Ees/Ea ranks among all features.
+      </p>
+      <div id="shap-summary"></div>
+      <img id="shap-summary-img" class="img-responsive" alt="SHAP summary plot" />
+
+      <div class="explain-block">
+        <h4>How to Read the SHAP Summary Plot</h4>
+        <p>This is a <strong>beeswarm plot</strong>. Each dot is one patient. The plot is ordered by feature importance (top = most important).</p>
+        <ul>
+          <li><strong>X-axis (SHAP value):</strong> How much this feature pushed the prediction. Positive = pushed toward escalation. Negative = pushed away from escalation.</li>
+          <li><strong>Dot color:</strong> The actual value of the feature for that patient. Red = high value. Blue = low value.</li>
+          <li><strong>Clustering:</strong> If red dots cluster on the right side of a feature, that means <em>higher values of that feature</em> are associated with <em>higher escalation risk</em>.</li>
+        </ul>
+        <p><strong>Example:</strong> If "pre_lvedd" is near the top with red dots on the right, it means larger pre-implant LVEDd is associated with higher predicted escalation probability. If "ees_ea" has blue dots on the right, it means <em>lower</em> Ees/Ea (blue = low) pushes the prediction <em>toward</em> escalation (right = positive SHAP).</p>
+        <p><strong>Key takeaway:</strong> Ees/Ea ranks #31 out of ~179 features. It contributes, but it is not among the top drivers. The strongest predictors in the full model are inotrope count, pre-implant LVEDd, delta hemoglobin, and post-implant furosemide dose.</p>
+      </div>
+
+      <img id="shap-dep-img" class="img-responsive" alt="SHAP dependence plot for Ees/Ea" />
+
+      <div class="explain-block">
+        <h4>How to Read the SHAP Dependence Plot</h4>
+        <p>This plot isolates <strong>only Ees/Ea</strong> and shows how its SHAP contribution changes as the raw value changes.</p>
+        <ul>
+          <li><strong>X-axis:</strong> The actual Ees/Ea value for each patient (standardized).</li>
+          <li><strong>Y-axis:</strong> The SHAP value for Ees/Ea for that patient. Positive = pushed toward escalation. Negative = pushed away.</li>
+          <li><strong>Color:</strong> A second feature (often the one most correlated with Ees/Ea). It reveals interaction effects.</li>
+        </ul>
+        <p><strong>What to look for:</strong> A downward trend from left to right means lower Ees/Ea → higher SHAP → higher escalation risk. If the color gradient shows a pattern (e.g., all red dots are on the top right), that means Ees/Ea interacts with that second feature.</p>
+        <p><strong>Clinical takeaway:</strong> The dependence plot tells you whether the Ees/Ea effect is consistent across patients or whether it only matters in combination with something else (e.g., high afterload, low contractility).</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="patients" style="display:none">
+    <h2>6. Per-Patient SHAP Breakdown</h2>
+    <div class="card">
+      <p>
+        For each patient with PV loop data, the table shows the raw Ees/Ea value, the SHAP contribution
+        of Ees/Ea to the escalation prediction, and the final predicted probability.
+      </p>
+      <div id="patient-table-container"></div>
+
+      <div class="explain-block">
+        <h4>How to Read Each Column</h4>
+        <ul>
+          <li><strong>Patient:</strong> Name or MRN of the patient.</li>
+          <li><strong>Ees/Ea:</strong> The raw pre-implant ventriculo-arterial coupling ratio. Lower = worse coupling.</li>
+          <li><strong>Threshold Zone:</strong> A bedside color code based on the raw Ees/Ea value.
+            <br><span class="badge badge-danger">Poor</span> = &lt; 0.40 (high suspicion)
+            <br><span class="badge badge-warning">Borderline</span> = 0.40–0.60 (watch closely)
+            <br><span class="badge badge-success">Adequate</span> = &gt; 0.60 (standard care)</li>
+          <li><strong>Ees/Ea SHAP:</strong> How much this specific patient's Ees/Ea value contributed to the <em>full</em> escalation model prediction.
+            <br><strong>+ → escalation</strong> means this patient's Ees/Ea pushed the model toward predicting escalation.
+            <br><strong>− → no escalation</strong> means it pushed the model away.
+            <br>The magnitude tells you how <em>strongly</em> it pushed. A SHAP of +0.15 is a larger push than +0.02.</li>
+          <li><strong>Prediction:</strong> The full model's predicted probability of escalation for this patient, expressed as a percentage. This is <em>not</em> based on Ees/Ea alone — it incorporates all 179 features.</li>
+          <li><strong>Actual:</strong> What really happened. <span class="badge badge-danger">Escalated</span> = needed ECMO, LVAD, transplant, or had arrest. <span class="badge badge-success">Not</span> = none of those.</li>
+        </ul>
+        <p><strong>How to use this table clinically:</strong></p>
+        <ol>
+          <li>Sort by <strong>Ees/Ea</strong> to find patients with the worst coupling. Check if their SHAP values are positive (the model noticed).</li>
+          <li>Look for patients with <strong>high Prediction % but negative Ees/Ea SHAP</strong>. This means the model predicted escalation, but Ees/Ea was <em>not</em> the reason — something else (e.g., inotrope count, LVEDd) drove the prediction.</li>
+          <li>Compare <strong>Prediction vs Actual</strong> to find false positives (model worried, but patient was fine) and false negatives (model missed an escalation). These cases teach you the model's blind spots.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  Impella Analytics PV Loop Analysis &middot; Generated 2026-05-19
+</footer>
+
+<script>
+  const API_URL = "/api/pv-loop-data";
+
+  function el(tag, attrs, ...children) {
+    const e = document.createElement(tag);
+    if (attrs) {
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === "text") e.textContent = v;
+        else e.setAttribute(k, v);
+      }
+    }
+    for (const c of children) {
+      if (typeof c === "string") e.appendChild(document.createTextNode(c));
+      else if (c) e.appendChild(c);
+    }
+    return e;
+  }
+
+  async function loadData() {
+    const status = document.getElementById("status");
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      renderAll(data);
+      status.style.display = "none";
+      document.querySelectorAll("section").forEach(s => s.style.display = "");
+    } catch (err) {
+      status.className = "error";
+      status.textContent = "Failed to load analysis data: " + err.message;
+    }
+  }
+
+  function renderAll(data) {
+    const model = data.model || {};
+    const shap = data.shap || {};
+    const images = data.images || {};
+
+    renderMetrics(model, shap);
+    renderRegression(model);
+    renderCoefficients(model);
+    renderImages(images);
+    renderShapSummary(shap);
+    renderPatientTable(shap);
+  }
+
+  function renderMetrics(model, shap) {
+    const container = document.getElementById("metrics");
+    const metrics = [
+      { label: "Patients with PV data", value: model.n != null ? model.n : "N/A" },
+      { label: "Escalated", value: model.n_pos != null ? model.n_pos : "N/A" },
+      { label: "PV-Only LogReg AUC", value: model.auc != null ? model.auc.toFixed(3) : "N/A" },
+      { label: `Ees/Ea Rank (of ${shap.n_features || "?"})`, value: shap.ees_ea_rank != null ? "#" + shap.ees_ea_rank : "N/A" },
+    ];
+    metrics.forEach(m => {
+      container.appendChild(el("div", { class: "metric-card" },
+        el("div", { class: "metric-value", text: String(m.value) }),
+        el("div", { class: "metric-label", text: m.label })
+      ));
+    });
+  }
+
+  function renderRegression(model) {
+    const container = document.getElementById("regression-metrics");
+    if (!model.coefficients) {
+      container.textContent = "Model coefficients not available.";
+      return;
+    }
+    const table = el("table", null,
+      el("tr", null,
+        el("th", { text: "Feature" }),
+        el("th", { text: "Coefficient" }),
+        el("th", { text: "Odds Ratio" }),
+        el("th", { text: "Interpretation" })
+      )
+    );
+    const ors = model.odds_ratios || {};
+    const interpretations = {
+      ees_ea: "Lower coupling ratio → higher escalation risk",
+      ea: "Higher afterload → higher escalation risk",
+      ees: "Higher contractility → higher escalation risk (controlling for afterload)",
+      pmax: "Higher peak pressure → higher escalation risk",
+      edp: "Higher EDP → lower predicted escalation (protective effect in model)",
+      esp: "Higher ESP → lower predicted escalation (protective effect in model)",
+    };
+    for (const [feat, coef] of Object.entries(model.coefficients)) {
+      const or = ors[feat];
+      table.appendChild(el("tr", null,
+        el("td", { text: feat }),
+        el("td", { text: Number(coef).toFixed(3) }),
+        el("td", { text: or != null ? Number(or).toFixed(2) : "N/A" }),
+        el("td", { text: interpretations[feat] || "" })
+      ));
+    }
+    container.appendChild(table);
+  }
+
+  function renderCoefficients(model) {
+    const container = document.getElementById("coefficients");
+    if (!model.coefficients) return;
+    const values = Object.values(model.coefficients).map(Number);
+    const maxAbs = Math.max(...values.map(Math.abs));
+    for (const [feat, coef] of Object.entries(model.coefficients)) {
+      const pct = (Math.abs(Number(coef)) / maxAbs) * 50;
+      const sign = Number(coef) >= 0 ? "positive" : "negative";
+      const fillStyle = sign === "positive" ? `left:50%; width:${pct}%;` : `right:50%; width:${pct}%;`;
+      container.appendChild(el("div", { class: "coeff-bar" },
+        el("div", { class: "coeff-label", text: feat }),
+        el("div", { class: "coeff-track" },
+          el("div", { class: "coeff-fill " + sign, style: fillStyle })
+        ),
+        el("div", { class: "coeff-value", text: Number(coef).toFixed(3) })
+      ));
+    }
+  }
+
+  function renderImages(images) {
+    if (images.scatter) document.getElementById("scatter-img").src = images.scatter;
+    if (images.coefficients) document.getElementById("coeff-img").src = images.coefficients;
+    if (images.shapSummary) document.getElementById("shap-summary-img").src = images.shapSummary;
+    if (images.shapDependence) document.getElementById("shap-dep-img").src = images.shapDependence;
+  }
+
+  function renderShapSummary(shap) {
+    const container = document.getElementById("shap-summary");
+    if (!shap.feature_importance) {
+      container.textContent = "SHAP data not available.";
+      return;
+    }
+    const top5 = Object.entries(shap.feature_importance).slice(0, 5);
+    const ul = el("ul", null);
+    for (const [feat, val] of top5) {
+      ul.appendChild(el("li", null,
+        el("strong", { text: feat + ": " }),
+        document.createTextNode("mean |SHAP| = " + Number(val).toFixed(4))
+      ));
+    }
+    const para = el("p", null,
+      el("strong", { text: "Top 5 features" }),
+      document.createTextNode(" driving escalation in the full model:")
+    );
+    container.appendChild(para);
+    container.appendChild(ul);
+
+    if (shap.ees_ea_rank) {
+      let rankText = "Ees/Ea ranks #" + shap.ees_ea_rank + " out of " + shap.n_features + " features in the full escalation model. ";
+      if (shap.ees_ea_rank <= 20) rankText += "It is among the top contributors.";
+      else rankText += "It contributes, but other features (e.g., inotrope count, LVEDd, hemoglobin changes) are stronger predictors.";
+      container.appendChild(el("p", { text: rankText }));
+    }
+  }
+
+  function renderPatientTable(shap) {
+    const container = document.getElementById("patient-table-container");
+    if (!shap.patient_shap || shap.patient_shap.length === 0) {
+      container.textContent = "SHAP per-patient data not available.";
+      return;
+    }
+    const rows = shap.patient_shap.filter(p => p.ees_ea_value !== null);
+    if (rows.length === 0) {
+      container.textContent = "No patients with Ees/Ea data available.";
+      return;
+    }
+
+    const table = el("table", null,
+      el("tr", null,
+        el("th", { text: "Patient" }),
+        el("th", { text: "Ees/Ea" }),
+        el("th", { text: "Threshold Zone" }),
+        el("th", { text: "Ees/Ea SHAP" }),
+        el("th", { text: "Prediction" }),
+        el("th", { text: "Actual" })
+      )
+    );
+
+    for (const p of rows) {
+      let zoneClass = "badge-success";
+      let zoneText = "Adequate";
+      if (p.ees_ea_value < 0.40) { zoneClass = "badge-danger"; zoneText = "Poor"; }
+      else if (p.ees_ea_value <= 0.60) { zoneClass = "badge-warning"; zoneText = "Borderline"; }
+
+      const shapDir = p.ees_ea_shap > 0 ? "+→ escalation" : "-→ no escalation";
+
+      table.appendChild(el("tr", null,
+        el("td", { text: p.name || p.mrn }),
+        el("td", { text: p.ees_ea_value.toFixed(3) }),
+        el("td", null, el("span", { class: "badge " + zoneClass, text: zoneText })),
+        el("td", { text: p.ees_ea_shap.toFixed(4) + " (" + shapDir + ")" }),
+        el("td", { text: (p.prediction_probability * 100).toFixed(1) + "%" }),
+        el("td", null,
+          el("span", {
+            class: "badge " + (p.actual === 1 ? "badge-danger" : "badge-success"),
+            text: p.actual === 1 ? "Escalated" : "Not"
+          })
+        )
+      ));
+    }
+    container.appendChild(table);
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>

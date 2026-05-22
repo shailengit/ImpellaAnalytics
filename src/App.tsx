@@ -1,17 +1,22 @@
 import React, { useState, useCallback } from "react";
 import axios from "axios";
-import { 
-  Activity, 
-  Upload, 
-  FileSpreadsheet, 
-  AlertTriangle, 
-  TrendingUp, 
-  Clock, 
+import {
+  Activity,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle,
+  TrendingUp,
+  Clock,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   ChevronRight,
   Download,
-  Info
+  Info,
+  Users,
+  LayoutDashboard,
+  ActivitySquare,
+  BookOpen
 } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -20,12 +25,21 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import type { PatientData, AnalyticsResult } from "./types";
+import ClusteringPage from "./components/ClusteringPage";
+import PVLoopPage from "./components/PVLoopPage";
+import PVLoopPageV2 from "./components/PVLoopPageV2";
+import RiskMeter from "./components/RiskMeter";
 
 export default function App() {
   const [data, setData] = useState<AnalyticsResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePatient, setActivePatient] = useState<PatientData | null>(null);
+  const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "pvloopv2">("dashboard");
+  const [showDeltaCPOInfo, setShowDeltaCPOInfo] = useState(false);
+  const [showRiskCounterInfo, setShowRiskCounterInfo] = useState(false);
+  const [showRecoveryScoreInfo, setShowRecoveryScoreInfo] = useState(false);
+  const [showEscalationFlagsInfo, setShowEscalationFlagsInfo] = useState(false);
 
   const loadSampleData = useCallback(async () => {
     setIsUploading(true);
@@ -75,12 +89,54 @@ export default function App() {
             <Activity className="text-blue-400 w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-light text-2xl tracking-tight uppercase">Impella <span className="font-bold">Analytics</span></h1>
+            <h1 className="font-light text-2xl tracking-tight uppercase cursor-pointer" onClick={() => setActivePage("dashboard")}>Impella <span className="font-bold">Analytics</span></h1>
             <p className="text-[10px] uppercase text-dark-text-muted font-mono tracking-widest">Hemodynamic Recovery Lead</p>
           </div>
         </div>
         
         <div className="flex gap-4">
+          <button
+            onClick={() => setActivePage("pvloop")}
+            className={cn(
+              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
+              activePage === "pvloop"
+                ? "bg-teal-600 text-white border-teal-600"
+                : "border-dark-border hover:bg-dark-accent"
+            )}
+          >
+            <ActivitySquare size={16} className={activePage === "pvloop" ? "text-teal-200" : "text-teal-400"} />
+            PV Loop (Original)
+          </button>
+          <button
+            onClick={() => setActivePage("pvloopv2")}
+            className={cn(
+              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
+              activePage === "pvloopv2"
+                ? "bg-cyan-600 text-white border-cyan-600"
+                : "border-dark-border hover:bg-dark-accent"
+            )}
+          >
+            <ActivitySquare size={16} className={activePage === "pvloopv2" ? "text-cyan-200" : "text-cyan-400"} />
+            PV Loop (V2)
+          </button>
+          <button
+            onClick={() => setActivePage("clusters")}
+            className={cn(
+              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
+              activePage === "clusters"
+                ? "bg-purple-600 text-white border-purple-600"
+                : "border-dark-border hover:bg-dark-accent"
+            )}
+          >
+            <Users size={16} className={activePage === "clusters" ? "text-purple-200" : "text-purple-400"} />
+            Patient Phenotypes
+          </button>
+          <button
+            onClick={() => window.open('/guide.html', '_blank')}
+            className="flex items-center gap-2 text-sm font-medium border border-dark-border px-4 py-2 rounded-sm hover:bg-dark-accent transition-all text-dark-text-secondary"
+          >
+            <BookOpen size={16} /> Guide
+          </button>
           <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-sm hover:bg-blue-500 transition-all flex items-center gap-2 text-sm font-medium shadow-lg shadow-blue-900/20">
             <Upload size={16} />
             {isUploading ? "Processing..." : "Upload Clinical RHC"}
@@ -90,12 +146,55 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto p-6 space-y-8">
-        {!data && !isUploading && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="h-[60vh] flex flex-col items-center justify-center border-2 border-dashed border-dark-border rounded-xl bg-dark-card/30"
-          >
+        {activePage === "clusters" ? (
+          <div className="space-y-6">
+            <button
+              onClick={() => setActivePage("dashboard")}
+              className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+            >
+              <ArrowLeft size={16} /> Back to Dashboard
+            </button>
+            <ClusteringPage />
+          </div>
+        ) : activePage === "pvloop" ? (
+          data && data.patients ? (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActivePage("dashboard")}
+                className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+              >
+                <ArrowLeft size={16} /> Back to Dashboard
+              </button>
+              <PVLoopPage patients={data.patients} />
+            </div>
+          ) : (
+            <div className="h-[60vh] flex items-center justify-center text-dark-text-muted font-mono text-sm uppercase tracking-widest">
+              Load patient data first to view PV Loop analysis
+            </div>
+          )
+        ) : activePage === "pvloopv2" ? (
+          data && data.patients ? (
+            <div className="space-y-6">
+              <button
+                onClick={() => setActivePage("dashboard")}
+                className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+              >
+                <ArrowLeft size={16} /> Back to Dashboard
+              </button>
+              <PVLoopPageV2 patients={data.patients} />
+            </div>
+          ) : (
+            <div className="h-[60vh] flex items-center justify-center text-dark-text-muted font-mono text-sm uppercase tracking-widest">
+              Load patient data first to view PV Loop analysis
+            </div>
+          )
+        ) : (
+          !data ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-[60vh] flex flex-col items-center justify-center border-2 border-dashed border-dark-border rounded-xl bg-dark-card/30"
+            >
             <FileSpreadsheet className="w-16 h-16 text-dark-text-muted mb-4 opacity-30" />
             <h2 className="text-3xl font-light mb-2 italic serif">Patient Cohort Analysis</h2>
             <p className="text-dark-text-secondary max-w-md text-center mb-8 text-sm">
@@ -119,6 +218,7 @@ export default function App() {
                </button>
             </div>
           </motion.div>
+          ) : null
         )}
 
         {isUploading && (
@@ -139,12 +239,17 @@ export default function App() {
           </div>
         )}
 
-        {data && data.summary && (
+        {activePage === "dashboard" && data && data.summary && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Top Cards */}
             <div className="lg:col-span-1 bg-dark-card border border-dark-border p-6 rounded-lg shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 blur-2xl group-hover:bg-emerald-500/10 transition-all"></div>
-              <p className="text-[10px] font-mono uppercase text-dark-text-muted mb-1 tracking-widest italic serif">Avg Delta CPO</p>
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-[10px] font-mono uppercase text-dark-text-muted tracking-widest italic serif">Avg Delta CPO</p>
+                <button onClick={() => setShowDeltaCPOInfo(!showDeltaCPOInfo)} className="text-dark-text-muted hover:text-dark-text-primary transition-colors">
+                  <Info size={12} />
+                </button>
+              </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-light tracking-tighter tabular-nums">
                   {data.summary.averageDeltaCPO?.toFixed(2) || "0.00"}
@@ -154,22 +259,46 @@ export default function App() {
               <p className="text-xs mt-2 text-emerald-400 flex items-center gap-1 font-medium">
                 <TrendingUp size={12} /> Post-implant effectiveness
               </p>
+              {showDeltaCPOInfo && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 p-4 bg-dark-accent border border-dark-border rounded-lg shadow-2xl text-xs font-mono leading-relaxed space-y-2">
+                  <p><strong>What it is:</strong> Cardiac Power Output (CPO) = (MAP × TDCO) / 451. Delta CPO is the change from pre-implant to 48h post-implant.</p>
+                  <p><strong>What it means:</strong> Positive delta = hemodynamic improvement on Impella support. Negative or flat delta suggests poor recovery.</p>
+                  <p><strong>Clinical threshold:</strong> Delta CPO &gt; 0.2 W generally correlates with improved survival and weaning candidacy.</p>
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-1 bg-dark-card border border-dark-border p-6 rounded-lg shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 blur-2xl"></div>
-              <p className="text-[10px] font-mono uppercase text-dark-text-muted mb-1 tracking-widest italic serif">Risk Counter</p>
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-[10px] font-mono uppercase text-dark-text-muted tracking-widest italic serif">Risk Counter</p>
+                <button onClick={() => setShowRiskCounterInfo(!showRiskCounterInfo)} className="text-dark-text-muted hover:text-dark-text-primary transition-colors">
+                  <Info size={12} />
+                </button>
+              </div>
               <div className="flex items-baseline gap-2">
                 <span className={cn("text-4xl font-light tracking-tighter tabular-nums", (data.summary.riskPatientCount || 0) > 0 ? "text-orange-400" : "")}>
                   {data.summary.riskPatientCount || 0}
                 </span>
                 <span className="text-sm text-dark-text-muted">High Risk</span>
               </div>
-              <p className="text-xs mt-2 text-dark-text-muted font-medium">Flag: RA {">"}20 or PAPI {"<"}1.0</p>
+              <p className="text-xs mt-2 text-dark-text-muted font-medium">Flag: RA &gt;20 or PAPI &lt;1.0</p>
+              {showRiskCounterInfo && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 p-4 bg-dark-accent border border-dark-border rounded-lg shadow-2xl text-xs font-mono leading-relaxed space-y-2">
+                  <p><strong>What it is:</strong> Count of patients meeting traditional hemodynamic danger thresholds based on 48h post-implant RHC.</p>
+                  <p><strong>RA &gt; 20 mmHg:</strong> Right atrial pressure above 20 suggests right ventricular failure or volume overload. Watch for rising inotrope needs and falling PAPI.</p>
+                  <p><strong>PAPI &lt; 1.0:</strong> Pulmonary Artery Pulsatility Index below 1.0 indicates severe RV dysfunction. PAPI = (PASP &#8722; PADP) / RA. Low PAPI predicts cardiogenic shock refractory to Impella alone.</p>
+                </div>
+              )}
             </div>
 
-            <div className="lg:col-span-1 bg-dark-card border border-dark-border p-6 rounded-lg shadow-xl">
-              <p className="text-[10px] font-mono uppercase text-dark-text-muted mb-1 tracking-widest italic serif">Recovery Score</p>
+            <div className="lg:col-span-1 bg-dark-card border border-dark-border p-6 rounded-lg shadow-xl relative">
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-[10px] font-mono uppercase text-dark-text-muted tracking-widest italic serif">Recovery Score</p>
+                <button onClick={() => setShowRecoveryScoreInfo(!showRecoveryScoreInfo)} className="text-dark-text-muted hover:text-dark-text-primary transition-colors">
+                  <Info size={12} />
+                </button>
+              </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-light tracking-tighter tabular-nums text-blue-400">
                   {Math.round(data.summary.recoveryScoreAverage || 0)}
@@ -177,10 +306,22 @@ export default function App() {
                 <span className="text-sm text-dark-text-muted">/ 100</span>
               </div>
               <p className="text-xs mt-2 text-dark-text-muted font-medium font-serif">Cohort effectiveness index</p>
+              {showRecoveryScoreInfo && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 p-4 bg-dark-accent border border-dark-border rounded-lg shadow-2xl text-xs font-mono leading-relaxed space-y-2">
+                  <p><strong>What it is:</strong> A composite index (0&#8211;100) quantifying how well the cohort is recovering on Impella support.</p>
+                  <p><strong>How it is calculated:</strong> Derived from delta CPO, PAPI improvement, RA trend, and inotrope reduction. Higher = better hemodynamic recovery trajectory.</p>
+                  <p><strong>How to use it:</strong> Score &gt; 70 suggests favorable weaning candidacy. Score &lt; 40 warrants evaluation for escalation (ECMO/LVAD) rather than weaning.</p>
+                </div>
+              )}
             </div>
 
-            <div className="lg:col-span-1 bg-dark-accent border border-dark-border p-6 rounded-lg shadow-xl">
-              <p className="text-[10px] font-mono uppercase text-dark-text-muted mb-1 tracking-widest italic serif">Escalation Flags</p>
+            <div className="lg:col-span-1 bg-dark-accent border border-dark-border p-6 rounded-lg shadow-xl relative">
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-[10px] font-mono uppercase text-dark-text-muted tracking-widest italic serif">Escalation Flags</p>
+                <button onClick={() => setShowEscalationFlagsInfo(!showEscalationFlagsInfo)} className="text-dark-text-muted hover:text-dark-text-primary transition-colors">
+                  <Info size={12} />
+                </button>
+              </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-light tracking-tighter tabular-nums text-orange-400">
                   {data.patients.filter(p => p.isEscalated).length}
@@ -188,7 +329,61 @@ export default function App() {
                 <span className="text-sm text-dark-text-muted font-medium">Complex Cases</span>
               </div>
               <p className="text-xs mt-2 text-orange-400/70 font-medium font-serif italic uppercase tracking-tighter">ECMO • LVAD • ARREST</p>
+              {showEscalationFlagsInfo && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 p-4 bg-dark-accent border border-dark-border rounded-lg shadow-2xl text-xs font-mono leading-relaxed space-y-2">
+                  <p><strong>What it is:</strong> Number of patients in this cohort who required mechanical circulatory support escalation beyond Impella alone.</p>
+                  <p><strong>ECMO:</strong> Extracorporeal membrane oxygenation for refractory cardiogenic shock or biventricular failure.</p>
+                  <p><strong>LVAD:</strong> Left ventricular assist device as destination therapy or bridge-to-transplant when native recovery is unlikely.</p>
+                  <p><strong>ARREST:</strong> Cardiac arrest while on Impella support — often signals irreversible myocardial damage or severe RV failure.</p>
+                  <p><strong>Why it matters:</strong> High escalation count = sicker cohort. Consider earlier advanced heart failure consultation and family counseling.</p>
+                </div>
+              )}
             </div>
+
+            {/* Cohort Risk Stratification */}
+            {data.patients.some(p => p.riskScores) && (
+              <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <RiskMeter
+                  label="Mortality Risk"
+                  value={data.patients.filter(p => p.riskScores).reduce((sum, p) => sum + (p.riskScores?.survival || 0), 0) / data.patients.filter(p => p.riskScores).length}
+                  color="text-red-400"
+                  info={
+                    <>
+                      <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will not survive to discharge.</p>
+                      <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features (pre-implant RHC, echo, labs, demographics, Impella settings). The displayed value is the cohort average.</p>
+                      <p><strong>What it means:</strong> Higher percentage = worse prognosis. A 30% cohort average means that, on average, 3 in 10 patients in this group are predicted to expire.</p>
+                      <p><strong>Limitation:</strong> The survival model has limited predictive power (AUC ~0.54). Do not use this number alone for triage.</p>
+                    </>
+                  }
+                />
+                <RiskMeter
+                  label="Escalation Risk"
+                  value={data.patients.filter(p => p.riskScores).reduce((sum, p) => sum + (p.riskScores?.escalation || 0), 0) / data.patients.filter(p => p.riskScores).length}
+                  color="text-orange-400"
+                  info={
+                    <>
+                      <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will need MCS escalation (ECMO, LVAD, transplant) or will arrest while on Impella.</p>
+                      <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features. The displayed value is the cohort average of individual patient probabilities.</p>
+                      <p><strong>What it means:</strong> Higher = plan early for ECMO/LVAD readiness, ensure crash cart availability, and consider early consultation with advanced heart failure team.</p>
+                      <p><strong>Limitation:</strong> AUC ~0.86 on our data, but expect AUC ~0.80–0.85 on new hospital patients.</p>
+                    </>
+                  }
+                />
+                <RiskMeter
+                  label="RV Dysfunction Risk"
+                  value={data.patients.filter(p => p.riskScores).reduce((sum, p) => sum + (p.riskScores?.rvDysfunction || 0), 0) / data.patients.filter(p => p.riskScores).length}
+                  color="text-amber-400"
+                  info={
+                    <>
+                      <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will develop right ventricular failure during Impella support.</p>
+                      <p><strong>How it's calculated:</strong> A Logistic Regression model trained on 185+ features. The displayed value is the cohort average.</p>
+                      <p><strong>What it means:</strong> Higher = watch for rising RA pressure, falling PAPI, echo signs of RV dilation, and increased inotrope requirements.</p>
+                      <p><strong>Limitation:</strong> AUC ~0.92 on our data. RV failure is often a dynamic process — use this as a screening flag, not a definitive diagnosis.</p>
+                    </>
+                  }
+                />
+              </div>
+            )}
 
             {/* Clinical Visualizations */}
             <div className="lg:col-span-3 space-y-6">
@@ -279,34 +474,45 @@ export default function App() {
 
             {/* Patient List Sidebar / Prediction */}
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-dark-accent p-6 rounded-xl shadow-2xl border border-dark-border relative overflow-hidden">
+              <div className="bg-dark-accent p-6 rounded-xl shadow-2xl border border-dark-border relative overflow-hidden flex flex-col" style={{ maxHeight: "500px" }}>
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
-                <h3 className="font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
+                <h3 className="font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2 shrink-0">
                   <ShieldCheck size={14} className="text-emerald-400" /> ML Survivability
                 </h3>
-                <div className="space-y-5">
-                  {data.predictions?.map((pred, idx) => {
-                    const patient = data.patients.find(p => p.id === pred.patientId);
-                    return (
-                      <div key={idx} className="pb-2">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-xs font-medium text-dark-text-secondary">{patient?.name}</span>
-                          <span className={cn("text-[10px] font-mono font-bold tracking-widest", pred.recoveryProbability > 0.7 ? "text-emerald-400" : "text-orange-400")}>
-                            {Math.round(pred.recoveryProbability * 100)}%
-                          </span>
+                <div className="max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-dark-border space-y-5 pr-2 flex-1">
+                  {data.predictions && data.predictions.length > 0 ? (
+                    data.predictions.map((pred, idx) => {
+                      const patient = data.patients.find(p => p.id === pred.patientId);
+                      return (
+                        <div key={idx} className="pb-2">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-medium text-dark-text-secondary">{patient?.name}</span>
+                            <span className={cn("text-[10px] font-mono font-bold tracking-widest", pred.recoveryProbability > 0.7 ? "text-emerald-400" : "text-orange-400")}>
+                              {Math.round(pred.recoveryProbability * 100)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-dark-bg h-1 rounded-full overflow-hidden border border-white/5">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pred.recoveryProbability * 100}%` }}
+                              className={cn("h-full shadow-[0_0_8px_rgba(52,211,153,0.3)]", pred.recoveryProbability > 0.7 ? "bg-emerald-400" : "bg-orange-400")}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full bg-dark-bg h-1 rounded-full overflow-hidden border border-white/5">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pred.recoveryProbability * 100}%` }}
-                            className={cn("h-full shadow-[0_0_8px_rgba(52,211,153,0.3)]", pred.recoveryProbability > 0.7 ? "bg-emerald-400" : "bg-orange-400")}
-                          />
-                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="text-dark-text-muted text-xs mb-2">No survivability predictions available</div>
+                      <div className="text-dark-text-muted/60 text-[10px] font-mono">
+                        {data.patients.length < 5
+                          ? `Need ≥5 patients for LOOCV model (current: ${data.patients.length})`
+                          : "Upload Excel file to generate predictions"}
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
                 </div>
-                <div className="mt-8 pt-4 border-t border-dark-border">
+                <div className="mt-4 pt-4 border-t border-dark-border shrink-0">
                   <p className="text-[9px] text-dark-text-muted uppercase font-mono leading-tight tracking-tighter">
                     RandomForest (LOOCV) • N={data.patients.length} • Seed 42
                   </p>

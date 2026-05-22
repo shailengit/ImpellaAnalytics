@@ -4,47 +4,178 @@
 export interface PatientData {
   id: string;
   name: string;
-  
-  // Baseline (Pre)
-  preRA: number;     // Right Atrial Pressure
-  prePCWP: number;   // Pulmonary Capillary Wedge Pressure
-  preCPO: number;    // Cardiac Power Output
-  prePAPI: number;   // Pulmonary Artery Pulsatility Index
-  preVIS: number;    // Vasoactive Inotropic Score
-  
-  // 48h Post
-  postRA: number;
-  postPCWP: number;
-  postCPO: number;
-  postPAPI: number;
-  postVIS: number;
-  
-  // Support
-  impellaFlow: number; // L/min
-  performanceLevel: number; // P-level
-  
-  // Knowledge Base Extension
-  eesEa?: number;         // PV Loop (Ees/Ea)
-  age?: number;           // Patient age
-  scai?: string;          // SCAI Shock Stage
-  
-  // Timing
+
+  // Demographics
+  age?: number;
+  weightKg?: number;
+  heightCm?: number;
+  gender?: number;
+  race?: number;
+  causeOfShock?: number;
+  scai?: string;
   daysBetweenRhcAndImpella: number;
-  
+
+  // Pre-implant RHC
+  preRA: number;
+  preRVSP?: number;
+  preRVDP?: number;
+  prePASP?: number;
+  prePADP?: number;
+  preMAP?: number;
+  prePCWP: number;
+  prePVR?: number;
+  preSBP?: number;
+  preDBP?: number;
+  preHR?: number;
+  preTDCO?: number;
+  preSV?: number;
+  prePaO2?: number;
+  preSpO2?: number;
+  prePAPI: number;
+  preCPO: number;
+  preRVCPO?: number;
+  preVIS?: number;
+
+  // Post-implant RHC
+  postRA: number;
+  postRVSP?: number;
+  postRVDP?: number;
+  postPASP?: number;
+  postPADP?: number;
+  postMAP?: number;
+  postPCWP: number;
+  postPVR?: number;
+  postSBP?: number;
+  postDBP?: number;
+  postHR?: number;
+  postTDCO?: number;
+  postSV?: number;
+  postPaO2?: number;
+  postSpO2?: number;
+  postPAPI: number;
+  postCPO: number;
+  postRVCPO?: number;
+  postVIS?: number;
+
+  // Echo
+  preRVEDD?: number;
+  preTAPSE?: number;
+  preRVS?: number;
+  preRVFS?: number;
+  preTRSeverity?: number;
+  preEchoPASP?: number;
+  preLVEDd?: number;
+  postRVEDD?: number;
+  postTAPSE?: number;
+  postRVS?: number;
+  postRVFS?: number;
+  postTRSeverity?: number;
+  postEchoPASP?: number;
+  postLVEDd?: number;
+
+  // Labs
+  preSodium?: number;
+  prePotassium?: number;
+  preHCO3?: number;
+  preCreatinine?: number;
+  preEGFR?: number;
+  preHemoglobin?: number;
+  preWBC?: number;
+  preAST?: number;
+  preALT?: number;
+  preBili?: number;
+  preLactate?: number;
+  prePH?: number;
+  postSodium?: number;
+  postPotassium?: number;
+  postHCO3?: number;
+  postCreatinine?: number;
+  postEGFR?: number;
+  postHemoglobin?: number;
+  postWBC?: number;
+  postAST?: number;
+  postALT?: number;
+  postBili?: number;
+  postLactate?: number;
+  postPH?: number;
+
+  // Inotropes / Support
+  dopamine?: number;
+  dobutamine?: number;
+  epinephrine?: number;
+  milrinone?: number;
+  norepinephrine?: number;
+  vasopressin?: number;
+  visScore?: number;
+  preFurosemide?: number;
+  postFurosemide?: number;
+  impellaFlow: number;
+  performanceLevel: number;
+
+  // PV Loop
+  ees?: number;
+  ea?: number;
+  eesEa?: number;
+  esp?: number;
+  edp?: number;
+  pmax?: number;
+  esv?: number;
+  edv?: number;
+  pvSV?: number;
+  dpDtMax?: number;
+  dpDtMin?: number;
+
   // Outcomes
   renalFailure: boolean;
   intubation: boolean;
   survived: boolean;
-  
-  // Qualitative
   notes: string;
-  isEscalated: boolean; // Flag if ECMO, LVAD, Arrest, Transplant found in notes
+  isEscalated: boolean;
+  mcsEscalation?: boolean;
 
   // Calculated
   deltaCPO: number;
   recoveryScore: number;
-
   escalationAlert?: boolean;
+
+  // ML Risk scores (populated by /api/predict)
+  riskScores?: {
+    survival?: number;
+    escalation?: number;
+    rvDysfunction?: number;
+  };
+}
+
+export interface ClusterAssignment {
+  patientId: string;
+  cluster_label: number;
+  cluster_name: string;
+  recommendation: string;
+  distances: Record<string, number>;
+  similarities: Record<string, number>;
+}
+
+export interface ClusterProfile {
+  cluster_name: string;
+  clinical_recommendation: string;
+  patient_count: number;
+  survival_rate: number | null;
+  escalation_rate: number | null;
+  renal_rate: number | null;
+  mean_features: Record<string, number>;
+  scai_distribution: Record<string, number>;
+  mrn_list: string[];
+}
+
+export interface ClusterQuality {
+  silhouette_score: number;
+  n_clusters: number;
+  n_features: number;
+  n_patients: number;
+  clustering_method: string;
+  bootstrap_iterations: number;
+  interpretation: "weak" | "moderate" | "strong";
+  clinical_caution: string;
 }
 
 export interface AnalyticsResult {
@@ -58,4 +189,5 @@ export interface AnalyticsResult {
     patientId: string;
     recoveryProbability: number;
   }[];
+  clusterResults?: Record<string, ClusterAssignment>;
 }

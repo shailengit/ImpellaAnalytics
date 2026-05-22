@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impella Analytics — Clinical User Guide</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #111827;
+      --border: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --amber: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      margin: 0.5rem 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    nav.toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      padding: 1.5rem 0 0;
+    }
+
+    nav.toc a {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      transition: 0.2s;
+    }
+
+    nav.toc a:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      margin-top: 2.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin-top: 1.8rem;
+      color: var(--accent-2);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin: 1rem 0;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); }
+    .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-danger  { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .badge-info    { background: rgba(59,130,246,0.15); color: var(--accent-2); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.4px;
+    }
+
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      font-size: 0.85rem;
+    }
+
+    code {
+      background: rgba(255,255,255,0.06);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.3rem;
+    }
+
+    pre {
+      background: #0d1117;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+
+    ul.checklist {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul.checklist li {
+      padding: 0.35rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    ul.checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .risk-bar {
+      height: 0.5rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--success) 0%, var(--warning) 50%, var(--danger) 100%);
+      margin: 0.5rem 0;
+    }
+
+    .risk-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Impella Analytics</h1>
+  <p>Clinical User Guide &mdash; Data, Architecture, and Bedside Use</p>
+  <nav class="toc">
+    <a href="#data">Data</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#models">Models</a>
+    <a href="#phenotypes">Phenotypes</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#interpretation">Interpretation</a>
+    <a href="#metrics">Dashboard Metrics</a>
+    <a href="#limitations">Limitations</a>
+    <a href="/pv-loop.html">PV Loop Analysis</a>
+  </nav>
+</header>
+
+<div class="container">
+
+<section id="data">
+  <h2>1. The Data</h2>
+
+  <h3>Source File</h3>
+  <p>The application ingests a single Excel workbook (<code>Impella_MK.xlsx</code>) that contains <strong>6 sheets</strong> spanning detailed patient-level data, a broader cohort registry, reference dictionaries, and PV-loop subsets.</p>
+
+  <div class="card">
+    <table>
+      <tr><th>Sheet</th><th>Patients</th><th>What it holds</th></tr>
+      <tr>
+        <td><strong>Patient Data</strong></td>
+        <td>67</td>
+        <td>Pre/post RHC, echo, labs, inotropes, diuretics, Impella settings, outcomes, and PV-loop mechanics. ~135 variables per patient.</td>
+      </tr>
+      <tr>
+        <td><strong>Cohort</strong></td>
+        <td>112</td>
+        <td>Registry-level fields: physician, indication, outcome, support duration, age, gender, MRN.</td>
+      </tr>
+      <tr>
+        <td><strong>Analysis</strong></td>
+        <td>~65</td>
+        <td>Cleaned subset with some computed fields (e.g., mean Ees/Ea).</td>
+      </tr>
+      <tr>
+        <td><strong>Reference</strong></td>
+        <td>&mdash;</td>
+        <td>Data dictionary explaining how each variable is extracted from Epic/Chart Review.</td>
+      </tr>
+      <tr>
+        <td><strong>MK Reference</strong></td>
+        <td>Subset</td>
+        <td>PV-loop data for a reference cohort.</td>
+      </tr>
+      <tr>
+        <td><strong>Interpretation</strong></td>
+        <td>&mdash;</td>
+        <td>Template for clinical interpretation of variables.</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>Key Clinical Variables</h3>
+  <div class="card">
+    <ul class="checklist">
+      <li><strong>RHC Pre/Post:</strong> RA, RVSP, RVDP, PASP, PADP, mPAP, PCWP, PVR, SBP, DBP, MAP, HR, TDCO, SV, PA O₂ sat, Sp O₂ sat, PAPI, CPO, RV-CPO</li>
+      <li><strong>Echo Pre/Post:</strong> RVEDD, TAPSE, RV S′, RV FS%, TR severity, PASP, LVEDd, septal flattening, atrial septal bowing</li>
+      <li><strong>Labs Pre/Post:</strong> Sodium, potassium, HCO₃, creatinine, eGFR, hemoglobin, WBC, AST, ALT, bilirubin, lactate, pH</li>
+      <li><strong>Support:</strong> Dopamine, dobutamine, epinephrine, milrinone, norepinephrine, vasopressin, VIS score</li>
+      <li><strong>PV Loop:</strong> Ees, Ea, Ees/Ea, ESP, EDP, Pmax, ESV, EDV, dP/dt max/min</li>
+      <li><strong>Outcomes:</strong> Renal failure, intubation, MCS escalation, survival/expired</li>
+    </ul>
+  </div>
+
+  <p>The two patient-level sources (<strong>Patient Data</strong> + <strong>Cohort</strong>) are merged on <strong>MRN</strong> to create a single cohort of <strong>128 unique patients</strong> used for model training.</p>
+</section>
+
+<section id="pipeline">
+  <h2>2. What We Built</h2>
+
+  <h3>Architecture</h3>
+  <p>Impella Analytics is a full-stack monolith: an <strong>Express</strong> server (TypeScript) serves a <strong>React 19</strong> frontend (Vite + Tailwind CSS v4). Python handles the heavy ML lifting.</p>
+
+  <div class="card">
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
+      <tr><td>Frontend</td><td>React 19, TypeScript, Tailwind v4, Recharts</td><td>Upload, cohort visualization, patient drill-down, risk meters</td></tr>
+      <tr><td>Server</td><td>Express 4, Vite (middlewareMode), Multer, xlsx</td><td>Excel parsing, API endpoints, Python bridge</td></tr>
+      <tr><td>ML Runtime</td><td>Python 3 + pandas + scikit-learn + joblib</td><td>Load trained models and return risk probabilities</td></tr>
+      <tr><td>ML Training</td><td>Python 3 + SHAP + matplotlib/seaborn</td><td>Feature engineering, cross-validation, model selection</td></tr>
+    </table>
+  </div>
+
+  <h3>Feature Engineering</h3>
+  <p>For every patient the pipeline derives <strong>185+ numeric features</strong>:</p>
+  <div class="card">
+    <ul class="checklist">
+      <li>Delta values (<code>post − pre</code>) for all RHC, echo, and lab metrics</li>
+      <li>Ratio values (<code>post / pre</code>) for key hemodynamics</li>
+      <li>BMI, age, gender, race, SCAI stage, cause of shock</li>
+      <li>Inotrope count, VIS score, Impella performance level and flow</li>
+      <li>PV-loop indices: Ees, Ea, Ees/Ea, ESP, EDP, Pmax</li>
+      <li>Composite: recovery score from delta CPO, VIS-high flag</li>
+    </ul>
+  </div>
+
+  <h3>Missing-Data Strategy</h3>
+  <p>Columns that are 100% missing are dropped. Remaining gaps are filled with the <strong>training-cohort median</strong>, then all features are z-score standardized before model input.</p>
+</section>
+
+<section id="models">
+  <h2>3. Machine-Learning Models</h2>
+
+  <p>Three binary classifiers were trained with <strong>5-fold stratified cross-validation</strong> (seed 42). The best-performing model per target was exported as a <code>.joblib</code> artifact and is called at runtime by the Node.js server.</p>
+
+  <div class="card">
+    <table>
+      <tr>
+        <th>Target</th>
+        <th>Definition</th>
+        <th>Best Model</th>
+        <th>AUC</th>
+        <th>Utility</th>
+      </tr>
+      <tr>
+        <td>Survival</td>
+        <td>Expired during hospitalization</td>
+        <td>RandomForest</td>
+        <td>0.52</td>
+        <td><span class="badge badge-danger">Not useful</span></td>
+      </tr>
+      <tr>
+        <td>MCS Escalation</td>
+        <td>ECMO, LVAD, transplant, or post-implant arrest</td>
+        <td>RandomForest</td>
+        <td>0.86</td>
+        <td><span class="badge badge-success">Clinically useful</span></td>
+      </tr>
+      <tr>
+        <td>RV Dysfunction</td>
+        <td>Composite: post PAPI &lt;1.0, RA &gt;20, TAPSE &lt;1.6, RV S′ &lt;9.5, RV-CPO drop &gt;30%, or explicit RV failure note</td>
+        <td>Logistic Regression</td>
+        <td>0.92</td>
+        <td><span class="badge badge-success">Highly useful</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>SHAP Explainability</h3>
+  <p>SHAP summary plots are generated during training and saved to <code>ml_output/shap_*.png</code>. They show which variables push an individual prediction up or down, making the models auditable at the bedside.</p>
+
+  <h3>Integration</h3>
+  <p>The Node.js server spawns <code>predict.py</code> via <code>execFile</code>, passing the full patient payload as JSON on <code>stdin</code>. The script loads the joblib artifacts and returns three risk probabilities as JSON on <code>stdout</code>. If Python is unavailable, the server gracefully degrades and returns the raw patient data without risk scores.</p>
+</section>
+
+<section id="phenotypes">
+  <h2>4. Patient Phenotypes (Clustering)</h2>
+
+  <p>The dashboard includes an unsupervised <strong>Consensus K-Means</strong> analysis that groups patients into distinct hemodynamic phenotypes. This is a <strong>research exploratory</strong> feature — cluster assignments should inform hypothesis generation, not replace clinical judgment.</p>
+
+  <h3>Methodology & Published Basis</h3>
+  <p>The clustering follows the approach described by <strong>Zweck et al. (2021)</strong> in cardiogenic-shock phenotyping literature: a small set of well-populated pre-implant laboratory variables plus hemodynamic congestion markers.</p>
+
+  <div class="card">
+    <ul class="checklist">
+      <li><strong>Algorithm:</strong> Consensus K-Means with 200 bootstrap iterations and 80% subsample ratio</li>
+      <li><strong>Preprocessing:</strong> PCA to 5 components (explains ~72% variance), then K-Means++ with 50 random inits</li>
+      <li><strong>k locked at 3:</strong> Zweck et al. found three stable phenotypes (cardiorenal, cardiometabolic, non-congested); we adopt the same convention for comparability</li>
+      <li><strong>Silhouette score:</strong> 0.237 — <span class="badge badge-warning">moderate separation</span>. Clusters overlap somewhat; assignments are probabilistic</li>
+    </ul>
+  </div>
+
+  <h3>Features Used (10)</h3>
+  <div class="card">
+    <table>
+      <tr><th>Feature</th><th>Category</th><th>Rationale</th></tr>
+      <tr><td>pre_egfr</td><td>Renal</td><td>Baseline kidney function; strongly prognostic in CS</td></tr>
+      <tr><td>pre_hco3</td><td>Metabolic</td><td>Acid-base status; reflects tissue perfusion and shock severity</td></tr>
+      <tr><td>pre_lactate</td><td>Metabolic</td><td>Tissue hypoperfusion marker</td></tr>
+      <tr><td>pre_alt</td><td>Hepatic</td><td>Liver congestion / hypoperfusion</td></tr>
+      <tr><td>pre_wbc</td><td>Inflammatory</td><td>Systemic inflammation / stress response</td></tr>
+      <tr><td>pre_hemoglobin</td><td>Hematologic</td><td>Oxygen-carrying capacity; anemia worsens shock</td></tr>
+      <tr><td>pre_ra</td><td>Hemodynamic</td><td>Right-atrial pressure = venous congestion / RV preload</td></tr>
+      <tr><td>age</td><td>Demographic</td><td>Age is a major prognostic factor in cardiogenic shock</td></tr>
+      <tr><td>bmi</td><td>Demographic</td><td>Body habitus affects drug dosing, hemodynamics, and outcomes</td></tr>
+      <tr><td>scai_numeric</td><td>Severity</td><td>SCAI shock stage (1=A/B, 2=C, 3=D, 4=E); validated risk strata</td></tr>
+    </table>
+  </div>
+  <p>These 10 features were chosen because they are <strong>populated for most patients</strong> (n=68 retained after &gt;50% missing exclusion) and have strong physiological discriminative power. Echo and post-implant variables were too sparse and reduced effective sample size. PV loop features (<code>ees</code>, <code>ea</code>, <code>ees_ea</code>) were removed after sandbox testing showed silhouette improves from 0.223 → 0.263 without them. Demographics (age, BMI) and SCAI stage were added to test whether shock severity classification improves separation; they modestly shifted cluster boundaries but did not resolve the survival paradox.</p>
+
+  <h3>The Three Clusters</h3>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--success)">Cluster 0 — Non-congested (Low-risk)</h4>
+    <p><strong>27 patients (40%)</strong> &middot; Survival <strong>70.4%</strong> &middot; Escalation <strong>14.8%</strong> &middot; Renal failure <strong>7.4%</strong></p>
+    <p><strong>Profile:</strong> Younger (age 51), higher BMI (31.5), best preserved eGFR (79.7), normal lactate (2.12), low RA (10.2), SCAI stage ~C (2.1).</p>
+    <p><strong>Interpretation:</strong> The "low-risk" label refers to hemodynamic congestion, not overall prognosis. This group has good kidneys and is younger, but metabolic stress is still present.</p>
+    <p><strong>Bedside implication:</strong> Early weaning candidate — monitor for bounce-back. The preserved eGFR and younger age suggest hemodynamic reserve, but the elevated lactate demands close metabolic surveillance.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--warning)">Cluster 1 — Cardiorenal (Moderate-risk)</h4>
+    <p><strong>37 patients (54%)</strong> &middot; Survival <strong>67.6%</strong> &middot; Escalation <strong>20.0%</strong> &middot; Renal failure <strong>22.9%</strong></p>
+    <p><strong>Profile:</strong> Older (age 65), lower BMI (25.7), low eGFR (41.0), normal lactate (1.70), elevated RA (14.2), SCAI stage ~C (2.3).</p>
+    <p><strong>Interpretation:</strong> Classic cardiorenal phenotype — congestion and renal dysfunction dominate. Age and BMI separation makes this group look more like the expected older, sicker cohort.</p>
+    <p><strong>Bedside implication:</strong> Staged escalation planning. Watch for RV deterioration as congestion is relieved. Diuretics and renal-dose dopamine may be beneficial.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--danger)">Cluster 2 — Cardiometabolic (High-risk)</h4>
+    <p><strong>4 patients (6%)</strong> &middot; Survival <strong>50.0%</strong> &middot; Escalation <strong>0.0%</strong> &middot; Renal failure <strong>25.0%</strong></p>
+    <p><strong>Profile:</strong> Older (age 67), normal BMI (27.8), extreme hepatic dysfunction (ALT 1331), leukocytosis (WBC 18.0), very high lactate (3.38), low HCO3 (18.5), SCAI stage ~D (2.7).</p>
+    <p><strong>Interpretation:</strong> Profound systemic inflammation + hepatic ischemia. The small size (n=4) makes this cluster unstable. SCAI stage is highest here (closest to D/E), confirming severity.</p>
+    <p><strong>Bedside implication:</strong> Consider advanced MCS, RV support, or transplant evaluation. These patients have exhausted metabolic reserve.</p>
+  </div>
+
+  <h3>Important Clinical Caveat — The "Non-congested" Paradox</h3>
+  <div class="card">
+    <p>Textbook cardiogenic-shock phenotypes expect the "non-congested" group to have the <em>best</em> survival. In our cohort, Cluster 0 (Non-congested) has <strong>marginally better survival (70.4%) than Cluster 1 (Cardiorenal, 67.6%)</strong>, but the gap is small (2.8 pp) and may be a statistical artifact given the sample size.</p>
+    <p><strong>Why?</strong> With only 68 patients, the algorithm consistently finds a natural grouping where good kidney function co-occurs with elevated lactate — a perfusion-stress signature that is metabolically worse than the cardiorenal group's preserved lactate. Removing PV loop features improved silhouette (0.202 → 0.237) and made clusters more compact, but it did not override the lactate–survival relationship. This is <strong>not a bug</strong>; it is an honest reflection of the data's structure. It underscores that <em>clustering discovers empirical groups, not guaranteed clinical truths.</em></p>
+    <p><strong>Practical takeaway:</strong> Do not assume the Non-congested cluster is "safe." Read the full profile (lactate, WBC, age, eGFR) before triaging.</p>
+  </div>
+
+  <h3>Quality Banner — How to Read the Silhouette Score</h3>
+  <div class="card">
+    <p>The dashboard displays a <strong>silhouette score</strong> in the quality banner at the top of the Phenotypes page.</p>
+    <ul>
+      <li><strong>Strong (&gt;0.50):</strong> Patients are clearly distinct from other clusters. Assignments are reliable.</li>
+      <li><strong>Moderate (0.25–0.50):</strong> Clusters overlap somewhat. Most assignments are reasonable, but borderline patients exist. <em>Current state: 0.237 — just below moderate.</em></li>
+      <li><strong>Weak (&lt;0.25):</strong> Significant overlap. Cluster labels are exploratory; do not use for individual patient triage.</li>
+    </ul>
+    <p>Our current score of <strong>0.237</strong> (10 features) improved from 0.202 after removing PV loop variables. The clusters are real but fuzzy. Use them to understand cohort heterogeneity, not to label individual patients definitively.</p>
+  </div>
+
+  <h3>Clustering Limitations</h3>
+  <div class="card">
+    <ol>
+      <li><strong>Small n (68 patients):</strong> Cluster stability is limited. Adding 20–30 more patients could shift cluster boundaries.</li>
+      <li><strong>k=3 is a convention, not proven optimal:</strong> We lock k=3 to match published methodology, but k=2 or k=4 might fit this specific cohort better.</li>
+      <li><strong>Survival paradox persists with demographics:</strong> Adding age, BMI, and SCAI stage did not resolve the inverted survival ordering. The "non-congested" cluster still has worse survival (64.0%) than "cardiorenal" (71.1%). This is an honest reflection of the data, not a bug.</li>
+      <li><strong>Missing data imputation:</strong> Median imputation for the 13 features is modest, but for sparser features (echo, post-implant) it would wash out signal entirely — which is why those features were excluded.</li>
+      <li><strong>No external validation:</strong> These clusters have only been discovered in one center. A replication cohort is required before claiming generalizable phenotypes.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="dashboard">
+  <h2>5. Dashboard Features</h2>
+
+  <div class="card">
+    <ul class="checklist">
+      <li><strong>Cohort Summary Cards:</strong> Total patients, mean age, mean delta CPO, mortality rate, escalation rate</li>
+      <li><strong>Risk Meters:</strong> Three color-coded gauges per patient (Survival, Escalation, RV Dysfunction)</li>
+      <li><strong>Delta CPO Bar Chart:</strong> Cohort-wide recovery score distribution</li>
+      <li><strong>Risk Scatter Plot:</strong> Escalation vs RV-dysfunction probability across the cohort</li>
+      <li><strong>Patient Detail Modal:</strong> Pre/post hemodynamic trends, lab trends, echo changes, ML risk scores, and knowledge-base alerts</li>
+      <li><strong>Knowledge-Base Alert:</strong> If a patient’s Ees/Ea matches a historically escalated case within 15%, a yellow alert is surfaced</li>
+    </ul>
+  </div>
+</section>
+
+<section id="workflow">
+  <h2>6. Recommended Bedside Workflow</h2>
+
+  <h3>Step 1 — Upload Data</h3>
+  <p>Upload <code>Impella_MK.xlsx</code> via the dashboard. The parser expects <strong>one patient per column</strong>, with metric labels in the first column. It auto-detects sections: demographics, pre-implant RHC, 48h post-implant RHC, echo, labs, inotropes, diuretics, Impella settings, outcomes, and PV loop data.</p>
+
+  <h3>Step 2 — Review Cohort Snapshot</h3>
+  <p>Scan the summary cards and the delta-CPO bar chart. Look for patients with:</p>
+  <div class="card">
+    <ul>
+      <li>Negative delta CPO (hemodynamic deterioration rather than recovery)</li>
+      <li>High VIS score + high inotrope count</li>
+      <li>Post-implant PAPI &lt; 1.0 or RA &gt; 20 mmHg</li>
+    </ul>
+  </div>
+
+  <h3>Step 3 — Click Into High-Risk Patients</h3>
+  <p>Open the patient detail modal. Pay attention to:</p>
+  <div class="card">
+    <ul class="checklist">
+      <li><strong>RV Dysfunction probability</strong> — the most reliable model (AUC 0.92)</li>
+      <li><strong>MCS Escalation probability</strong> — strong discriminator (AUC 0.86)</li>
+      <li><strong>Knowledge-Base Alert</strong> — historical pattern match on Ees/Ea</li>
+      <li><strong>Echo trends</strong> — TAPSE, RV S′, TR severity changes</li>
+      <li><strong>Lab trajectory</strong> — creatinine, lactate, pH direction</li>
+    </ul>
+  </div>
+
+  <h3>Step 4 — Triage and Action</h3>
+  <p>Use the thresholds below to decide monitoring intensity and escalation readiness. The dashboard is a <strong>decision-support</strong> tool, not a replacement for clinical judgment.</p>
+</section>
+
+<section id="interpretation">
+  <h2>7. Risk Score Interpretation</h2>
+
+  <div class="risk-bar"></div>
+  <div class="risk-labels">
+    <span>Low (&lt;0.15)</span>
+    <span>Moderate (0.15–0.30)</span>
+    <span>High (&gt;0.30)</span>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <table>
+      <tr><th>Score</th><th>Meaning</th><th>Recommended Action</th></tr>
+      <tr>
+        <td><span class="badge badge-success">&lt; 0.15</span></td>
+        <td>Low predicted risk</td>
+        <td>Standard ICU monitoring per protocol</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-warning">0.15 – 0.30</span></td>
+        <td>Moderate predicted risk</td>
+        <td>Increase monitoring frequency; schedule early echo follow-up; notify primary team</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-danger">&gt; 0.30</span></td>
+        <td>High predicted risk</td>
+        <td>Alert clinical team; prepare escalation protocols (ECMO cart, LVAD consult); prioritize RHC review</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>Model-Specific Notes</h3>
+  <div class="card">
+    <p><span class="badge badge-danger">Survival (AUC 0.52)</span> &mdash; Barely better than chance. <strong>Do not use for clinical decision-making.</strong> Mortality in this cohort is likely driven by factors not fully captured in pre-implant RHC data (refractory arrhythmia, multi-organ failure).</p>
+    <p><span class="badge badge-success">MCS Escalation (AUC 0.86)</span> &mdash; Strong discriminator. Driven by pre-implant hemodynamics, VIS score, inotrope burden, and SCAI stage. Useful for early identification of patients who may need ECMO or durable LVAD.</p>
+    <p><span class="badge badge-success">RV Dysfunction (AUC 0.92)</span> &mdash; Excellent discrimination. Driven by pre-implant RHC, echo metrics, and PV-loop mechanics. Scores &gt;0.3 warrant heightened RV surveillance.</p>
+  </div>
+
+  <h3>What Each Number Means &mdash; In Plain Language</h3>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--danger)">Mortality Risk (Survival)</h4>
+    <p><strong>What it is:</strong> The model looks at pre-implant data (RHC, echo, labs, demographics) and estimates the probability that a patient will die during this hospitalization.</p>
+    <p><strong>What it is NOT:</strong> It does <strong>not</strong> predict whether the Impella device is working. It does <strong>not</strong> predict long-term survival after discharge. It also does <strong>not</strong> capture every possible cause of death. The model has an AUC of only 0.52, which means it is only slightly better than flipping a coin.</p>
+    <p><strong>Why is it so weak?</strong> Death in this cohort is often caused by things the model cannot see from the pre-implant data sheet: sudden refractory arrhythmias (VT/VF), multi-organ failure that develops unpredictably, or sepsis. Those events are not coded into the training data.</p>
+    <p><strong>How to read the percentage:</strong></p>
+    <ul>
+      <li><strong>5% risk</strong> &mdash; The model thinks this patient is relatively stable based on the numbers it can see. <em>This does not guarantee survival.</em> A patient with a 5% score can still die from an arrhythmia the model never saw coming.</li>
+      <li><strong>50% risk</strong> &mdash; The model is essentially guessing. The pre-implant profile is ambiguous; some patients with this profile survived, others did not. Do not act on this score alone.</li>
+      <li><strong>80% risk</strong> &mdash; The model sees several red flags in the pre-implant data. Even so, this number is unreliable. Use clinical judgment, not this meter, to triage care.</li>
+    </ul>
+    <p><strong>Bottom line:</strong> Treat this meter as an experimental research output. If a patient dies with a low score, it is not a bug &mdash; it is a known limitation of the model.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--success)">MCS Escalation Risk</h4>
+    <p><strong>What it is:</strong> The probability that this patient will need stronger mechanical support than Impella alone during this admission. "Escalation" specifically means one or more of the following:</p>
+    <ul>
+      <li>Conversion to <strong>ECMO</strong> (extracorporeal membrane oxygenation)</li>
+      <li>Bridge to <strong>LVAD</strong> (left ventricular assist device)</li>
+      <li>Bridge to <strong>transplant</strong></li>
+      <li>Post-implant <strong>cardiac arrest</strong> requiring resuscitation</li>
+    </ul>
+    <p><strong>What it is NOT:</strong> It does <strong>not</strong> mean the Impella is failing. It means the patient is so sick that the Impella alone may not be enough. Many escalated patients still benefit from Impella as a bridge to the next therapy.</p>
+    <p><strong>How to read the percentage:</strong></p>
+    <ul>
+      <li><strong>10% risk</strong> &mdash; The pre-implant profile is relatively favorable. Hemodynamics are reasonable, inotrope burden is low, and SCAI stage is not D/E. Standard Impella support is likely sufficient. No need to pre-position the ECMO cart, but normal vigilance applies.</li>
+      <li><strong>35% risk</strong> &mdash; The model sees concerning patterns: high VIS score, severe SCAI stage D/E, very low pre-implant CPO, high PCWP. This patient is in a gray zone where some patients stabilize on Impella alone and others crash. <strong>Recommended action:</strong> Increase monitoring frequency (e.g., hourly vitals + continuous telemetry), ensure ECMO cannulation supplies are in the room, and give the cardiac surgery team a heads-up.</li>
+      <li><strong>70% risk</strong> &mdash; The model predicts a high probability of escalation. The patient likely has refractory cardiogenic shock with poor hemodynamic reserve. <strong>Recommended action:</strong> Alert the attending, place an ECMO-consult early, confirm blood products and cannulation access are available, and consider whether the patient is a LVAD or transplant candidate before they decompensate.</li>
+    </ul>
+    <p><strong>Key point:</strong> This model has an AUC of 0.86, which is strong. But it still misses some escalations (false negatives) and over-flags others (false positives). Use it as a triage aid, not an absolute rule.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--amber)">RV Dysfunction Risk</h4>
+    <p><strong>What it is:</strong> The probability that the patient's <strong>right ventricle (RV)</strong> will fail or deteriorate during the period of Impella support.</p>
+    <p>Impella is a <strong>left-sided</strong> device. It supports the left ventricle (LV) by unloading it and pumping blood forward. When the LV is unloaded, pressures and flows change throughout the heart. The right ventricle (RV) must then handle different filling conditions and pulmonary pressures. Some patients' RVs adapt well; others do not.</p>
+    <p>"RV Dysfunction" specifically means meeting one or more of these post-implant criteria:</p>
+    <ul>
+      <li>PAPI drops below <strong>1.0</strong> (pulmonary artery pulsatility index)</li>
+      <li>RA pressure climbs above <strong>20 mmHg</strong></li>
+      <li>TAPSE falls below <strong>1.6 cm</strong> (tricuspid annular plane systolic excursion)</li>
+      <li>RV S' drops below <strong>9.5 cm/s</strong></li>
+      <li>RV-CPO falls by more than <strong>30%</strong> from pre-implant to post-implant</li>
+      <li>Clinical notes explicitly document "RV failure" or "RV dysfunction"</li>
+    </ul>
+
+    <p><strong>What it is NOT &mdash; this is critical:</strong></p>
+    <p>A high RV Dysfunction Risk score <strong>does not</strong> mean the Impella implant was useless or that the LV is not recovering. It means the RV may need <strong>additional help</strong> alongside the Impella. These are two separate issues:</p>
+    <ul>
+      <li>A patient can have a <strong>successful LV recovery</strong> (Impella is working) <strong>AND</strong> simultaneous <strong>RV dysfunction</strong> (the right side is struggling).</li>
+      <li>A high score is a <strong>call to action</strong>, not a reason to abandon the procedure.</li>
+    </ul>
+
+    <p><strong>How to read the percentage:</strong></p>
+    <ul>
+      <li><strong>5% risk</strong> &mdash; The pre-implant RV looks healthy: good TAPSE, low TR severity, reasonable RA pressure. The RV is likely to tolerate the hemodynamic changes of LV unloading without issues. Standard post-implant echo surveillance is sufficient.</li>
+      <li><strong>30% risk</strong> &mdash; The model sees warning signs: borderline pre-implant TAPSE, elevated RA pressure, or worsening labs. The RV may struggle but might still compensate. <strong>Recommended action:</strong> Schedule an earlier post-implant echo (e.g., 24h instead of 48h), trend lactate and mixed venous oxygen saturation closely, and have RV inotropes (e.g., milrinone) and pulmonary vasodilators ready.</li>
+      <li><strong>70% risk</strong> &mdash; The model predicts a high probability of RV failure. The pre-implant profile shows a frail RV: severe TR, low TAPSE, high RA pressure, or a steep creatinine rise. <strong>Recommended action:</strong> Proactively start RV-directed therapies (e.g., inhaled nitric oxide, IV milrinone, low-dose epinephrine), obtain a bedside echo as soon as possible after implant, and discuss with the team whether biventricular support (Impella + right-side strategy) is appropriate.</li>
+    </ul>
+
+    <p><strong>Real example &mdash; why high RV risk does not equal death:</strong></p>
+    <p>Consider a patient with pre-implant TAPSE of 1.2 cm and TR severity grade 3. The model flags a high RV Dysfunction Risk. After Impella implant, the post-implant echo shows TAPSE actually improved to 2.3 cm and RA pressure dropped to 7 mmHg. The RV tolerated the procedure well despite the high predicted risk. The model warned you to watch closely; the reality was better than predicted. This is exactly how the score should be used: <em>heightened vigilance, not automatic pessimism.</em></p>
+
+    <p><strong>Bottom line:</strong> The RV Dysfunction model (AUC 0.92) is the most reliable of the three. Use it to decide how intensively to monitor the RV after Impella implant, not to decide whether to implant the device in the first place.</p>
+  </div>
+</section>
+
+<section id="metrics">
+  <h2>8. Dashboard Metrics Reference</h2>
+
+  <div class="card">
+    <h3>Avg Delta CPO</h3>
+    <p><strong>What it is:</strong> Change in Cardiac Power Output (CPO) from pre-implant to post-implant RHC. CPO measures how much mechanical power the heart generates.</p>
+    <p><strong>How it's calculated:</strong> Delta CPO = Post-implant CPO minus Pre-implant CPO. CPO itself is read directly from the Excel file (computed as MAP &times; Cardiac Output / 451).</p>
+    <p><strong>What it means:</strong> Positive = the heart is generating more power after Impella support. Negative = hemodynamics worsened. Zero = no change.</p>
+    <p><strong>Limitation:</strong> CPO is only one dimension of recovery. A patient can have improved CPO but still develop RV failure or need escalation.</p>
+  </div>
+
+  <div class="card">
+    <h3>Risk Counter</h3>
+    <p><strong>What it is:</strong> A count of patients showing two traditional bedside red flags for right ventricular failure or venous congestion after Impella implantation.</p>
+    <p><strong>How it's calculated:</strong> Counts patients where post-implant RA pressure &gt; 20 mmHg OR Pulmonary Artery Pulsatility Index (PAPI) &lt; 1.0.</p>
+    <p><strong>What it means:</strong> These are not ML predictions &mdash; they are classic hemodynamic criteria. High RA + low PAPI strongly suggest RV decompensation, which is the most common reason for MCS escalation.</p>
+    <p><strong>Limitation:</strong> These thresholds are arbitrary cutoffs. A patient with RA=19 or PAPI=1.1 is still concerning. Always look at trends, not single numbers.</p>
+  </div>
+
+  <div class="card">
+    <h3>Recovery Score</h3>
+    <p><strong>What it is:</strong> A 0&ndash;100 index that normalizes the change in Cardiac Power Output (deltaCPO) into an easy-to-read score.</p>
+    <p><strong>How it's calculated:</strong> Recovery Score = clamp(round((deltaCPO + 0.5) &times; 100), 0, 100). This assumes deltaCPO ranges approximately &minus;0.5 to +0.5 Watts.</p>
+    <p><strong>What it means:</strong> 50 = no change in CPO. Above 50 = hemodynamic improvement. Below 50 = worsening. 100 = best possible improvement in this cohort. 0 = worst possible decline.</p>
+    <p><strong>Limitation:</strong> When deltaCPO is very large (e.g., &minus;0.75 or +0.60), the score gets clamped to 0 or 100 and loses its ability to distinguish degrees of improvement or decline. It is best used for cohort-level comparison, not fine-grained patient ranking.</p>
+  </div>
+
+  <div class="card">
+    <h3>Escalation Flags</h3>
+    <p><strong>What it is:</strong> The number of patients who required Mechanical Circulatory Support escalation (ECMO, LVAD, transplant) or experienced cardiac arrest while on Impella support.</p>
+    <p><strong>How it's calculated:</strong> Counts patients where the Excel row "MCS Escalation" = 1. This is a binary yes/no flag recorded at the time of data entry.</p>
+    <p><strong>What it means:</strong> These are the most resource-intensive and highest-mortality cases. A high count suggests a sicker cohort or longer support duration. It also flags patients for whom the Impella alone was not sufficient.</p>
+    <p><strong>Limitation:</strong> This is a retrospective label, not a prediction. Some escalations are planned (bridge to transplant), others are rescue (post-arrest ECMO). The dashboard does not distinguish between these.</p>
+  </div>
+
+  <div class="card">
+    <h3>Mortality Risk (Cohort Average)</h3>
+    <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will not survive to discharge.</p>
+    <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features (pre-implant RHC, echo, labs, demographics, Impella settings). The displayed value is the cohort average of individual patient probabilities.</p>
+    <p><strong>What it means:</strong> Higher percentage = worse prognosis. A 30% cohort average means that, on average, 3 in 10 patients in this group are predicted to expire. This is a probability, not a guarantee.</p>
+    <p><strong>Limitation:</strong> The survival model has limited predictive power (AUC ~0.54). Mortality is influenced by many unmeasured factors (arrhythmia timing, operator decisions, family goals of care). Do not use this number alone for triage.</p>
+  </div>
+
+  <div class="card">
+    <h3>Escalation Risk (Cohort Average)</h3>
+    <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will need MCS escalation (ECMO, LVAD, transplant) or will arrest while on Impella.</p>
+    <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features. The displayed value is the cohort average of individual patient probabilities.</p>
+    <p><strong>What it means:</strong> Higher = plan early for ECMO/LVAD readiness, ensure crash cart availability, and consider early consultation with advanced heart failure team.</p>
+    <p><strong>Limitation:</strong> AUC ~0.95 on our data, but this is still "in-sample." On a new hospital's patients, expect AUC to drop to ~0.80&ndash;0.85. Also, escalation is partly a decision, not just a biological event &mdash; some operators escalate earlier than others.</p>
+  </div>
+
+  <div class="card">
+    <h3>RV Dysfunction Risk (Cohort Average)</h3>
+    <p><strong>What it is:</strong> Machine learning estimate of the probability of right ventricular failure during Impella support.</p>
+    <p><strong>How it's calculated:</strong> A Logistic Regression model trained on 185+ features. Logistic regression is fully interpretable &mdash; each feature has a coefficient you can inspect. The displayed value is the cohort average.</p>
+    <p><strong>What it means:</strong> Higher = watch for rising RA pressure, falling PAPI, echo signs of RV dilation, and increased inotrope requirements. RV failure is the most common cause of Impella failure and MCS escalation.</p>
+    <p><strong>Limitation:</strong> AUC ~0.93 on our data, but RV dysfunction is often a dynamic process. A patient can look fine at 48 hours and decompensate at 72 hours. Use this as a screening flag, not a definitive diagnosis.</p>
+  </div>
+</section>
+
+<section id="limitations">
+  <h2>9. Limitations & Cautions</h2>
+
+  <div class="card">
+    <ol>
+      <li><strong>Small sample size (128 patients):</strong> Limits generalizability to other institutions or larger populations.</li>
+      <li><strong>Missing data:</strong> Many echo and lab variables are incomplete. Median imputation may obscure true clinical trajectories.</li>
+      <li><strong>Single-center data:</strong> Models may not transfer to centers with different patient populations or Impella practices.</li>
+      <li><strong>Survival model is unreliable:</strong> Do not use the mortality risk score for clinical decision-making until validated on a larger cohort.</li>
+      <li><strong>No external validation:</strong> Models have only been internally cross-validated. External validation on an independent cohort is required before deployment in clinical workflows.</li>
+      <li><strong>RV dysfunction target is partially derived:</strong> The composite definition relies on echo data that is missing for ~40% of patients, which may introduce bias.</li>
+    </ol>
+  </div>
+
+  <p style="color:var(--muted)">This dashboard is intended for <strong>research and quality-improvement</strong> use. Any clinical decisions should incorporate the full clinical picture, multidisciplinary input, and institutional protocols.</p>
+</section>
+
+<section>
+  <h2>10. Quick Reference Commands</h2>
+
+  <div class="card">
+    <pre><code># Start the dev server (port 2956)
+npm run dev
+
+# Retrain all ML models
+python ml_pipeline.py
+
+# Type-check the frontend
+npm run lint
+
+# Build for production
+npm run build
+
+# Run production server
+npm start</code></pre>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  Impella Analytics Clinical User Guide &middot; Generated 2026-05-17
+</footer>
+
+</body>
+</html>

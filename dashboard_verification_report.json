@@ -1,0 +1,76 @@
+{
+  "cpo": {
+    "status": "PASS",
+    "details": [],
+    "summary": "124/124 CPO values match within 1%"
+  },
+  "papi": {
+    "status": "WARN",
+    "details": [
+      "Col 33 Pre: PAPI Excel=0.415 vs Calc=1.467 (RA=15.0, PASP=53.0, PADP=31.0)"
+    ],
+    "summary": "124/125 PAPI values match within 2%"
+  },
+  "delta_cpo": {
+    "status": "PASS",
+    "details": [],
+    "summary": "deltaCPO formula verified for 66 patients"
+  },
+  "recovery_score": {
+    "status": "WARN",
+    "details": [
+      "WARNING: recoveryScore formula clamps to 0 or 100 for extreme deltaCPO values. This means the score loses discriminative power when CPO changes are large.",
+      "Col 4: RecoveryScore clamped to 0 (deltaCPO=-0.745, rawScore=-24.5)",
+      "Col 5: RecoveryScore clamped to 100 (deltaCPO=0.507, rawScore=100.7)",
+      "Col 7: RecoveryScore clamped to 100 (deltaCPO=0.762, rawScore=126.2)",
+      "Col 10: RecoveryScore clamped to 0 (deltaCPO=-1.141, rawScore=-64.1)",
+      "Col 14: RecoveryScore clamped to 100 (deltaCPO=0.580, rawScore=108.0)",
+      "Col 22: RecoveryScore clamped to 0 (deltaCPO=-1.089, rawScore=-58.9)",
+      "Col 24: RecoveryScore clamped to 0 (deltaCPO=-0.782, rawScore=-28.2)",
+      "Col 31: RecoveryScore clamped to 100 (deltaCPO=0.706, rawScore=120.6)",
+      "Col 33: RecoveryScore clamped to 100 (deltaCPO=0.850, rawScore=135.0)",
+      "Col 38: RecoveryScore clamped to 100 (deltaCPO=0.745, rawScore=124.5)",
+      "Col 39: RecoveryScore clamped to 100 (deltaCPO=0.957, rawScore=145.7)",
+      "Col 43: RecoveryScore clamped to 100 (deltaCPO=0.592, rawScore=109.2)",
+      "Col 49: RecoveryScore clamped to 0 (deltaCPO=-0.761, rawScore=-26.1)",
+      "Col 52: RecoveryScore clamped to 100 (deltaCPO=0.912, rawScore=141.2)",
+      "Col 54: RecoveryScore clamped to 100 (deltaCPO=0.658, rawScore=115.8)",
+      "Col 55: RecoveryScore clamped to 100 (deltaCPO=0.740, rawScore=124.0)",
+      "Col 59: RecoveryScore clamped to 100 (deltaCPO=0.532, rawScore=103.2)",
+      "Col 66: RecoveryScore clamped to 100 (deltaCPO=0.577, rawScore=107.7)"
+    ],
+    "summary": "48/66 recovery scores within 0-100 without clamping"
+  },
+  "outcome_coding": {
+    "status": "FAIL",
+    "details": [
+      "MRN JH53672447: Outcome=4 marked expired but Cohort says 'survived'",
+      "MRN JH91494273: Outcome=4 marked expired but Cohort says 'survived'",
+      "MRN JH82632686: Outcome=4 marked expired but Cohort says 'survived'",
+      "MRN JH07689575: Outcome=4 marked expired but Cohort says 'survived'"
+    ],
+    "summary": "63/67 outcomes match Cohort sheet"
+  },
+  "mcs_escalation": {
+    "status": "PASS",
+    "details": [],
+    "summary": "67/67 MCS escalation values are 0 or 1"
+  },
+  "ml_pipeline_rows": {
+    "status": "FAIL",
+    "details": [
+      "general_notes: ml_pipeline says row 2, but Excel row 2 is 'general'",
+      "weight_kg: ml_pipeline says row 8, but Excel row 8 is 'weight (kg)'",
+      "height_cm: ml_pipeline says row 9, but Excel row 9 is 'height (cm)'",
+      "days_between_rhc_and_impella: ml_pipeline says row 14, but Excel row 14 is 'days between rhc\nand impella'",
+      "pre_map: ml_pipeline says row 22, but Excel row 22 is 'mpap (mmhg)'",
+      "pre_rv_cpo: ml_pipeline says row 35, but Excel row 35 is 'rv-cpo'",
+      "post_map: ml_pipeline says row 45, but Excel row 45 is 'mpap (mmhg)'",
+      "post_rv_cpo: ml_pipeline says row 58, but Excel row 58 is 'rv-cpo'",
+      "pre_echo_pasp: ml_pipeline says row 72, but Excel row 72 is 'pasp (mmhg)'",
+      "pre_atrial_bowing: ml_pipeline says row 75, but Excel row 75 is 'atrial septal bowing'",
+      "... and 8 more mismatches"
+    ],
+    "summary": "101/119 row mappings correct"
+  }
+}
