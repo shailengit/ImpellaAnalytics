@@ -13,9 +13,9 @@ This is a clinical analytics dashboard for Impella hemodynamic recovery data. It
 - `npm start` — Run the production server from `dist/server.cjs`.
 - `npm run lint` — Type-check with `tsc --noEmit`.
 - `npm run clean` — Remove the `dist` directory.
-- `python ml_pipeline.py` — Train/retrain the ML models on `Impella_MK.xlsx`.
+- `python scripts/ml_pipeline.py` — Train/retrain the ML models on `Impella_MK.xlsx`.
 
-There are no unit tests or a test runner configured in this project.
+There are no unit tests or a test runner configured in this project. Run `npx vitest run` after adding tests.
 
 ## Architecture
 
@@ -27,7 +27,7 @@ The dev and production servers are the same Express app (`server.ts`). In develo
 
 1. **Upload / Sample**: The React frontend (`src/App.tsx`) uploads an `.xlsx` file to `POST /api/analyze` or loads hardcoded sample data from `GET /api/sample`.
 2. **Excel Parsing**: `server.ts:processExcelData()` reads the Excel buffer with `xlsx`. The expected layout is **one patient per column**, with metric labels in column 0. It parses all sections: general demographics, pre-implant RHC, 48h post-implant RHC, echo pre/post, labs pre/post, inotropes, diuretics, Impella settings, outcomes, and PV loop data.
-3. **ML Prediction**: The server calls `predict.py` via `execFile` (using `PYTHON_PATH` env var) with the full patient data as JSON on stdin. The Python script loads trained scikit-learn models from `ml_output/*.joblib` and returns three risk probabilities:
+3. **ML Prediction**: The server calls `scripts/predict_all.py` via `execFile` (using `PYTHON_PATH` env var) with the full patient data as JSON on stdin. The Python script loads trained scikit-learn models from `ml_output/*.joblib` and returns three risk probabilities:
    - `survival` — mortality risk (RandomForest, AUC ~0.52, limited utility)
    - `escalation` — MCS escalation risk (RandomForest, AUC ~0.86)
    - `rvDysfunction` — RV dysfunction risk (LogisticRegression, AUC ~0.92)
@@ -38,8 +38,11 @@ The dev and production servers are the same Express app (`server.ts`). In develo
 ### Key Files
 
 - `server.ts` — Express server, expanded Excel parser, `runPythonPredictions()` helper, and API endpoints.
-- `predict.py` — Standalone Python script called by Node.js at runtime. Loads `ml_output/*.joblib` models and returns JSON predictions.
-- `ml_pipeline.py` — Training pipeline. Ingests `Patient Data` + `Cohort` sheets, engineers 185+ features, trains LogisticRegression and RandomForest models with stratified 5-fold CV, exports joblib artifacts + LR JSON coefficients, generates SHAP plots and `model_report.md`.
+- `scripts/predict_all.py` — Standalone Python script called by Node.js at runtime. Loads `ml_output/*.joblib` models and returns JSON predictions.
+- `scripts/ml_pipeline.py` — Training pipeline. Ingests `Patient Data` + `Cohort` sheets, engineers 185+ features, trains LogisticRegression and RandomForest models with stratified 5-fold CV, exports joblib artifacts + LR JSON coefficients, generates SHAP plots and `model_report.md`.
+- `scripts/analyze_effectiveness.py` — Effectiveness analysis pipeline. Reads `Impella_MK.xlsx`, computes survival, hemodynamic, lab, and ventricular mechanics analyses, exports `public/effectiveness-data.json` and `public/effectiveness-report.html`.
+- `scripts/clustering_pipeline.py` — Clustering pipeline for patient phenotype discovery.
+- `scripts/mortality_feature_analysis.py` — Feature importance analysis for mortality prediction.
 - `src/App.tsx` — Main React component with all UI, chart rendering, and new `RiskMeter` component for ML risk display.
 - `src/types.ts` — `PatientData` and `AnalyticsResult` interfaces, including the new `riskScores` field.
 - `src/lib/utils.ts` — `cn()` utility wrapping `clsx` + `tailwind-merge`.

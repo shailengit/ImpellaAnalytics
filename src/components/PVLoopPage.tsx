@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { cn } from "@/src/lib/utils";
 
 interface PVLoopAnalysis {
@@ -26,36 +26,60 @@ interface SHAPResult {
   }>;
 }
 
-interface PVLoopPageProps {
-  patients?: Array<{
-    id: string;
-    name: string;
-    eesEa?: number;
-    ees?: number;
-    ea?: number;
-    esp?: number;
-    edp?: number;
-    pmax?: number;
-    esv?: number;
-    edv?: number;
-    pvSV?: number;
-    dpDtMax?: number;
-    dpDtMin?: number;
-    recoveryScore: number;
-    riskScores?: {
-      escalation?: number;
-    };
-  }>;
+interface PatientPV {
+  id: string;
+  name: string;
+  eesEa?: number;
+  ees?: number;
+  ea?: number;
+  esp?: number;
+  edp?: number;
+  pmax?: number;
+  esv?: number;
+  edv?: number;
+  pvSV?: number;
+  dpDtMax?: number;
+  dpDtMin?: number;
+  recoveryScore: number;
+  riskScores?: { escalation?: number };
 }
+
+interface PVLoopPageProps {
+  patients?: Array<PatientPV>;
+}
+
+function computeDerivedPV(m: Partial<{ ees: number; ea: number; esp: number; edp: number; pmax: number }>) {
+  const ees = m.ees ?? 0.5;
+  const ea = m.ea ?? 0.3;
+  const esp = m.esp ?? 150;
+  const edp = m.edp ?? 15;
+  const pmax = m.pmax ?? esp;
+  const eesEa = ees > 0 ? ees / ea : 0;
+  return { ees, ea, esp, edp, pmax, eesEa };
+}
+
+function getEesEaZone(e: number | undefined) {
+  if (e === undefined || e === null) return { label: "N/A", color: "text-gray-400", bg: "bg-gray-500/20", border: "border-gray-500/30" };
+  if (e < 1.0) return { label: "High RV Load", color: "text-red-400", bg: "bg-red-500/20", border: "border-red-500/30" };
+  if (e < 1.5) return { label: "Intermediate", color: "text-orange-400", bg: "bg-orange-500/20", border: "border-orange-500/30" };
+  if (e < 2.5) return { label: "Normal", color: "text-emerald-400", bg: "bg-emerald-500/20", border: "border-emerald-500/30" };
+  return { label: "Favorable", color: "text-blue-400", bg: "bg-blue-500/20", border: "border-blue-500/30" };
+}
+
+const ZONE_LEGENDS = [
+  { range: "Ees/Ea < 1.0", label: "High RV Load", color: "text-red-400", bg: "bg-red-500/20", border: "border-red-500/30" },
+  { range: "1.0 – 1.5", label: "Intermediate", color: "text-orange-400", bg: "bg-orange-500/20", border: "border-orange-500/30" },
+  { range: "1.5 – 2.5", label: "Normal", color: "text-emerald-400", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
+  { range: "> 2.5", label: "Favorable", color: "text-blue-400", bg: "bg-blue-500/20", border: "border-blue-500/30" },
+];
 
 export default function PVLoopPage({ patients }: PVLoopPageProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "patients">("overview");
   const [shapData, setShapData] = useState<SHAPResult | null>(null);
   const [pvModelData, setPvModelData] = useState<PVLoopAnalysis | null>(null);
-  const [selectedPatient, setSelectedPatient] = useState<number | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientPV | null>(null);
 
-  // Load SHAP data if not already loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (!shapData) {
       fetch("/ml_output/pv_loop_shap.json")
         .then(r => r.json())
@@ -64,8 +88,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
     }
   }, [shapData]);
 
-  // Load PV model data if not already loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (!pvModelData) {
       fetch("/ml_output/pv_loop_escalation_model.json")
         .then(r => r.json())
@@ -76,15 +99,44 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
 
   const patientList = patients || [];
 
-  const getEesEaZone = (e: number | undefined) => {
-    if (e === undefined || e === null) return { label: "N/A", color: "text-gray-400", bg: "bg-gray-500/20", border: "border-gray-500/30" };
-    if (e < 1.0) return { label: "High RV Load", color: "text-red-400", bg: "bg-red-500/20", border: "border-red-500/30" };
-    if (e < 1.5) return { label: "Intermediate", color: "text-orange-400", bg: "bg-orange-500/20", border: "border-orange-500/30" };
-    if (e < 2.5) return { label: "Normal", color: "text-emerald-400", bg: "bg-emerald-500/20", border: "border-emerald-500/30" };
-    return { label: "Favorable", color: "text-blue-400", bg: "bg-blue-500/20", border: "border-blue-500/30" };
-  };
+  const pvData = useMemo(() => {
+    return patientList
+      .filter(p => {
+        const m = computeDerivedPV(p);
+        return m.eesEa > 0;
+      })
+      .map(p => {
+        const m = computeDerivedPV(p);
+        const zone = getEesEaZone(m.eesEa);
+        const shapEntry = shapData?.patient_shap?.find(s =>
+          p.name.includes(s.name) || s.name.includes(p.name.split(" ")[0])
+        );
+        return { ...p, ...m, zone, shapEntry };
+      });
+  }, [patientList, shapData]);
 
-  const sortedPatients = [...patientList].sort((a, b) => (b.eesEa || 0) - (a.eesEa || 0));
+  const pvChartData = useMemo(() => {
+    return pvData.map(p => ({
+      name: p.name,
+      ees: p.ees,
+      ea: p.ea,
+      eesEa: p.eesEa,
+      recoveryScore: p.recoveryScore,
+      zone: p.zone,
+    }));
+  }, [pvData]);
+
+  const getCellColor = useCallback((eesEa: number) => {
+    if (eesEa >= 2.5) return "#60a5fa";
+    if (eesEa >= 1.5) return "#34d399";
+    if (eesEa >= 1.0) return "#fbbf24";
+    return "#f87171";
+  }, []);
+
+  const sortedByEesEa = useMemo(() =>
+    [...pvData].sort((a, b) => b.eesEa - a.eesEa),
+    [pvData]
+  );
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text-primary p-6 space-y-8">
@@ -94,7 +146,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
           Pressure-Volume <span className="font-bold">Loop Analysis</span>
         </h1>
         <p className="text-xs font-mono text-dark-text-muted mt-1 uppercase tracking-widest">
-          Pre-generated visualizations from PV Loop pipeline — Ees/Ea coupling, SHAP explainability
+          Ees/Ea coupling, SHAP explainability & hemodynamic response
         </p>
       </div>
 
@@ -124,6 +176,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
         </button>
       </div>
 
+      {/* ===== OVERVIEW TAB ===== */}
       {activeTab === "overview" && (
         <>
           {/* Model Summary */}
@@ -150,11 +203,61 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
             </div>
           )}
 
+          {/* Zone Legend */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {ZONE_LEGENDS.map(zone => (
+              <div key={zone.label} className={cn("border rounded-lg p-3", zone.bg, zone.border)}>
+                <div className="text-[10px] text-dark-text-muted uppercase tracking-widest">{zone.range}</div>
+                <div className={cn("text-sm font-bold", zone.color)}>{zone.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Ees/Ea Bar Chart */}
+          {pvChartData.length > 0 && (
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Ees/Ea Ratio by Patient
+              </h3>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={pvChartData} margin={{ bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 9, fontFamily: "monospace", fill: "#718096" }}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fontFamily: "monospace", fill: "#718096" }}
+                      label={{ value: "Ees/Ea", angle: -90, position: "insideLeft", fill: "#718096", fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#1A1D24", border: "1px solid #2D3748", borderRadius: "8px", color: "#E2E8F0" }}
+                      itemStyle={{ fontSize: "12px" }}
+                    />
+                    <Bar dataKey="eesEa" radius={[2, 2, 0, 0]}>
+                      {pvChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getCellColor(entry.eesEa)} fillOpacity={0.7} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
           {/* Coefficient Plot */}
           {pvModelData && Object.keys(pvModelData.coefficients).length > 0 && (
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" /> PV Loop Logistic Regression Coefficients
+                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Logistic Regression Coefficients
               </h3>
               <div className="space-y-3">
                 {Object.entries(pvModelData.coefficients).map(([feat, coef]) => {
@@ -165,11 +268,11 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
                   const widthPct = (absCoef / maxAbs) * 100;
                   return (
                     <div key={feat} className="flex items-center gap-4">
-                      <div className="w-32 text-xs font-mono text-dark-text-secondary text-right">{feat}</div>
-                      <div className="flex-1 h-6 bg-dark-bg rounded overflow-hidden">
+                      <div className="w-32 text-xs font-mono text-dark-text-secondary text-right truncate" title={feat}>{feat}</div>
+                      <div className="flex-1 h-6 bg-dark-bg rounded overflow-hidden relative">
                         <div
-                          className={cn("h-full transition-all", isPositive ? "bg-red-500/60" : "bg-emerald-500/60")}
-                          style={{ width: `${widthPct}%`, marginLeft: isPositive ? 0 : `${-widthPct + 100}%` }}
+                          className={cn("h-full transition-all absolute", isPositive ? "bg-red-500/60 left-1/2" : "bg-emerald-500/60 right-1/2")}
+                          style={{ width: `${widthPct / 2}%` }}
                         />
                       </div>
                       <div className={cn("w-16 text-xs font-mono text-right", isPositive ? "text-red-400" : "text-emerald-400")}>
@@ -180,8 +283,8 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
                 })}
               </div>
               <div className="mt-4 text-[10px] text-dark-text-muted font-mono flex gap-6">
-                <span className="flex items-center gap-1"><span className="w-3 h-2 bg-red-500/60" /> Positive = Higher escalation risk</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-2 bg-emerald-500/60" /> Negative = Lower escalation risk</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-2 bg-red-500/60 inline-block" /> Positive = Higher escalation risk</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-2 bg-emerald-500/60 inline-block" /> Negative = Lower escalation risk</span>
               </div>
             </div>
           )}
@@ -236,74 +339,161 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
         </>
       )}
 
+      {/* ===== PATIENTS TAB ===== */}
       {activeTab === "patients" && (
         <>
-          {/* Patient Table */}
-          <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-dark-border bg-dark-accent/50">
-              <h3 className="text-xs font-bold uppercase tracking-widest">Patient PV Loop Data</h3>
+          {pvData.length === 0 ? (
+            <div className="bg-dark-card border border-dark-border rounded-xl p-12 text-center">
+              <p className="text-dark-text-muted">No PV Loop data available for this cohort.</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs font-mono">
-                <thead>
-                  <tr className="border-b border-dark-border text-left">
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest">Patient</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">Ees/Ea</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">Ees</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">Ea</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">ESP</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">EDP</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">Recovery</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">SHAP (Ees/Ea)</th>
-                    <th className="py-3 px-4 text-dark-text-muted uppercase tracking-widest text-right">Escalation Prob</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedPatients.map((p, idx) => {
-                    const zone = getEesEaZone(p.eesEa);
-                    const shapEntry = shapData?.patient_shap?.find(s => p.name.includes(s.name) || s.name.includes(p.name.split(" ")[0]));
-                    return (
-                      <tr
-                        key={p.id || idx}
-                        className={cn(
-                          "border-b border-dark-border/50 hover:bg-dark-accent/30 cursor-pointer transition-all",
-                          selectedPatient === idx ? "bg-dark-accent" : ""
-                        )}
-                        onClick={() => setSelectedPatient(selectedPatient === idx ? null : idx)}
-                      >
-                        <td className="py-3 px-4 text-dark-text-primary font-medium">{p.name}</td>
-                        <td className={cn("py-3 px-4 text-right font-bold tabular-nums", zone.color)}>
-                          {p.eesEa?.toFixed(3) || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-dark-text-secondary tabular-nums">
-                          {p.ees?.toFixed(3) || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-dark-text-secondary tabular-nums">
-                          {p.ea?.toFixed(3) || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-dark-text-secondary tabular-nums">
-                          {p.esp?.toFixed(0) || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-dark-text-secondary tabular-nums">
-                          {p.edp?.toFixed(0) || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-right tabular-nums">
-                          {p.recoveryScore.toFixed(0)}
-                        </td>
-                        <td className={cn("py-3 px-4 text-right tabular-nums", (shapEntry?.ees_ea_shap || 0) > 0 ? "text-red-400" : "text-emerald-400")}>
-                          {shapEntry?.ees_ea_shap?.toFixed(4) || "—"}
-                        </td>
-                        <td className={cn("py-3 px-4 text-right tabular-nums", (shapEntry?.prediction_probability || 0) > 0.3 ? "text-orange-400" : "text-emerald-400")}>
-                          {shapEntry ? `${(shapEntry.prediction_probability * 100).toFixed(0)}%` : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          ) : (
+            <>
+              {/* Summary bar */}
+              <div className="flex items-center gap-4 text-xs font-mono text-dark-text-muted">
+                <span>{pvData.length} patients with PV data</span>
+                <span className="w-px h-4 bg-dark-border" />
+                <span className="text-red-400">{pvData.filter(p => p.eesEa < 1.0).length} high RV load</span>
+                <span className="w-px h-4 bg-dark-border" />
+                <span className="text-emerald-400">{pvData.filter(p => p.eesEa >= 1.5).length} normal/favorable</span>
+              </div>
+
+              {/* Patient Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortedByEesEa.map((p, idx) => (
+                  <button
+                    key={p.id || idx}
+                    onClick={() => setSelectedPatient(selectedPatient?.id === p.id ? null : p)}
+                    className={cn(
+                      "bg-dark-card border rounded-xl p-5 text-left transition-all",
+                      selectedPatient?.id === p.id
+                        ? "ring-2 ring-blue-500 bg-dark-accent border-blue-500/30"
+                        : "border-dark-border hover:bg-dark-accent/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="text-[10px] font-mono text-dark-text-muted uppercase tracking-widest mb-1">Patient</div>
+                        <div className="text-sm font-bold text-dark-text-primary">{p.name}</div>
+                      </div>
+                      <div className={cn("text-2xl font-bold tabular-nums", p.zone.color)}>
+                        {(p as any).eesEa?.toFixed(2) ?? "—"}
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="flex justify-between">
+                        <span className="text-dark-text-muted">Ees</span>
+                        <span className="text-dark-text-secondary tabular-nums">{(p as any).ees?.toFixed(3) ?? "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-dark-text-muted">Ea</span>
+                        <span className="text-dark-text-secondary tabular-nums">{(p as any).ea?.toFixed(3) ?? "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-dark-text-muted">ESP</span>
+                        <span className="text-dark-text-secondary tabular-nums">{(p as any).esp?.toFixed(0) ?? "—"} mmHg</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-dark-text-muted">EDP</span>
+                        <span className="text-dark-text-secondary tabular-nums">{(p as any).edp?.toFixed(0) ?? "—"} mmHg</span>
+                      </div>
+                      {(p as any).shapEntry && (
+                        <div className="flex justify-between pt-1 border-t border-dark-border/50">
+                          <span className="text-dark-text-muted">Escalation Risk</span>
+                          <span className={cn("tabular-nums font-bold", ((p as any).shapEntry?.prediction_probability || 0) > 0.3 ? "text-orange-400" : "text-emerald-400")}>
+                            {((p as any).shapEntry?.prediction_probability * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className={cn("text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border", p.zone.color, p.zone.bg, p.zone.border)}>
+                          {p.zone.label}
+                        </span>
+                        <span className="text-dark-text-muted">Recovery: {(p as any).recoveryScore?.toFixed(0) ?? "—"}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </>
+      )}
+
+      {/* Patient Detail Modal (shown for both tabs) */}
+      {selectedPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSelectedPatient(null)}>
+          <div
+            className="bg-dark-card border border-dark-border rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold mb-1">PV Loop Detail — {selectedPatient.name}</h2>
+                <p className="text-sm text-dark-text-secondary">
+                  Ees/Ea ratio and derived hemodynamic parameters
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPatient(null)}
+                className="text-dark-text-muted hover:text-dark-text-primary text-xs uppercase tracking-widest"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-xs font-mono">
+              {[
+                { label: "Ees (End-Systolic Elastance)", value: (selectedPatient as any).ees?.toFixed(3) ?? "N/A", unit: "mmHg/mL" },
+                { label: "Ea (Arterial Elastance)", value: (selectedPatient as any).ea?.toFixed(3) ?? "N/A", unit: "mmHg/mL" },
+                { label: "Ees/Ea Ratio", value: (selectedPatient as any).eesEa?.toFixed(3) ?? "N/A", unit: "" },
+                { label: "ESP (End-Systolic Pressure)", value: (selectedPatient as any).esp?.toFixed(0) ?? "N/A", unit: "mmHg" },
+                { label: "EDP (End-Diastolic Pressure)", value: (selectedPatient as any).edp?.toFixed(0) ?? "N/A", unit: "mmHg" },
+                { label: "Pmax", value: (selectedPatient as any).pmax?.toFixed(0) ?? "N/A", unit: "mmHg" },
+                { label: "ESV (End-Systolic Volume)", value: (selectedPatient as any).esv?.toFixed(1) ?? "N/A", unit: "mL" },
+                { label: "EDV (End-Diastolic Volume)", value: (selectedPatient as any).edv?.toFixed(1) ?? "N/A", unit: "mL" },
+                { label: "Stroke Volume (PV)", value: (selectedPatient as any).pvSV?.toFixed(1) ?? "N/A", unit: "mL" },
+              ].map(metric => (
+                <div key={metric.label} className="flex justify-between items-center border-b border-dark-border/50 py-2">
+                  <span className="text-dark-text-muted">{metric.label}</span>
+                  <span className="text-dark-text-primary font-bold tabular-nums">
+                    {metric.value} {metric.unit && <span className="text-dark-text-muted text-[10px]">{metric.unit}</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* SHAP info for selected patient */}
+            {(() => {
+              const shapEntry = shapData?.patient_shap?.find(s =>
+                selectedPatient.name.includes(s.name) || s.name.includes(selectedPatient.name.split(" ")[0])
+              );
+              if (!shapEntry) return null;
+              return (
+                <div className="mt-6 pt-4 border-t border-dark-border">
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3 text-dark-text-secondary">SHAP Explainability</h4>
+                  <div className="grid grid-cols-3 gap-4 text-xs font-mono">
+                    <div>
+                      <div className="text-dark-text-muted text-[10px] uppercase tracking-widest">Ees/Ea SHAP Value</div>
+                      <div className={cn("font-bold tabular-nums", (shapEntry.ees_ea_shap || 0) > 0 ? "text-red-400" : "text-emerald-400")}>
+                        {shapEntry.ees_ea_shap?.toFixed(4) ?? "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-dark-text-muted text-[10px] uppercase tracking-widest">Escalation Probability</div>
+                      <div className={cn("font-bold tabular-nums", shapEntry.prediction_probability > 0.3 ? "text-orange-400" : "text-emerald-400")}>
+                        {(shapEntry.prediction_probability * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-dark-text-muted text-[10px] uppercase tracking-widest">Actual Outcome</div>
+                      <div className={cn("font-bold", shapEntry.actual === 1 ? "text-red-400" : "text-emerald-400")}>
+                        {shapEntry.actual === 1 ? "Escalated" : "Stable"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
       )}
     </div>
   );

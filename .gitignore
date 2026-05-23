@@ -6,3 +6,22 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# ML pipeline outputs (regeneratable)
+ml_output/
+
+# Tooling
+.superpowers/
+.claude/
+
+# Auto-generated analysis files
+public/effectiveness-data.json
+public/effectiveness-report.html
+
+# Python scripts directory
+scripts/__pycache__/
