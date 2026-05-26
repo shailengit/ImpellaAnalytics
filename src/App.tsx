@@ -9,21 +9,25 @@ import {
   Users,
   Brain,
   BarChart3,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import type { AnalyticsResult } from "./types";
+import type { PatientData, AnalyticsResult } from "./types";
 import ClusteringPage from "./components/ClusteringPage";
 import PVLoopPage from "./components/PVLoopPage";
 
 import MortalityFeaturesPage from "./components/MortalityFeaturesPage";
 import EffectivenessDashboard from "./components/EffectivenessDashboard";
 import DashboardPage from "./components/DashboardPage";
+import ActivePatientMonitor from "./components/ActivePatientMonitor";
 
 export default function App() {
   const [data, setData] = useState<AnalyticsResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "mortality" | "effectiveness">("dashboard");
+  const [selectedPatient, setSelectedPatient] = useState<PatientData | null>(null);
+  const [useLLM, setUseLLM] = useState(() => localStorage.getItem("useLLM") !== "false");
 
   const loadSampleData = useCallback(async () => {
     setIsUploading(true);
@@ -121,6 +125,18 @@ export default function App() {
             Effectiveness
           </button>
           <button
+            onClick={() => setUseLLM(prev => { const next = !prev; localStorage.setItem("useLLM", String(next)); return next; })}
+            className={cn(
+              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
+              useLLM
+                ? "bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-900/20"
+                : "border-dark-border hover:bg-dark-accent text-dark-text-muted"
+            )}
+          >
+            <Sparkles size={16} className={useLLM ? "text-purple-200" : "text-dark-text-muted"} />
+            AI Memo {useLLM ? "ON" : "OFF"}
+          </button>
+          <button
             onClick={() => window.open('/guide.html', '_blank')}
             className="flex items-center gap-2 text-sm font-medium border border-dark-border px-4 py-2 rounded-sm hover:bg-dark-accent transition-all text-dark-text-secondary"
           >
@@ -135,61 +151,75 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto p-6 space-y-8">
-        {activePage === "clusters" ? (
-          <div className="space-y-6">
-            <button
-              onClick={() => setActivePage("dashboard")}
-              className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <ClusteringPage />
-          </div>
-        ) : activePage === "pvloop" ? (
-          data && data.patients ? (
-            <div className="space-y-6">
-              <button
-                onClick={() => setActivePage("dashboard")}
-                className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
-              >
-                <ArrowLeft size={16} /> Back to Dashboard
-              </button>
-              <PVLoopPage patients={data.patients} />
-            </div>
-          ) : (
-            <div className="h-[60vh] flex items-center justify-center text-dark-text-muted font-mono text-sm uppercase tracking-widest">
-              Load patient data first to view PV Loop analysis
-            </div>
-          )
-        ) : activePage === "mortality" ? (
-          <div className="space-y-6">
-            <button
-              onClick={() => setActivePage("dashboard")}
-              className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <MortalityFeaturesPage />
-          </div>
-        ) : activePage === "effectiveness" ? (
-          <div className="space-y-6">
-            <button
-              onClick={() => setActivePage("dashboard")}
-              className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
-            >
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-            <EffectivenessDashboard />
-          </div>
-        ) : null}
-
-          <DashboardPage
-            data={data}
-            isUploading={isUploading}
-            error={error}
-            onLoadSample={loadSampleData}
-            onFileUpload={onFileUpload}
+        {selectedPatient ? (
+          <ActivePatientMonitor
+            patient={selectedPatient}
+            onBack={() => setSelectedPatient(null)}
+            useLLM={useLLM}
           />
+        ) : (
+          <>
+            {activePage === "clusters" ? (
+              <div className="space-y-6">
+                <button
+                  onClick={() => setActivePage("dashboard")}
+                  className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+                >
+                  <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+                <ClusteringPage />
+              </div>
+            ) : activePage === "pvloop" ? (
+              data && data.patients ? (
+                <div className="space-y-6">
+                  <button
+                    onClick={() => setActivePage("dashboard")}
+                    className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+                  >
+                    <ArrowLeft size={16} /> Back to Dashboard
+                  </button>
+                  <PVLoopPage patients={data.patients} />
+                </div>
+              ) : (
+                <div className="h-[60vh] flex items-center justify-center text-dark-text-muted font-mono text-sm uppercase tracking-widest">
+                  Load patient data first to view PV Loop analysis
+                </div>
+              )
+            ) : activePage === "mortality" ? (
+              <div className="space-y-6">
+                <button
+                  onClick={() => setActivePage("dashboard")}
+                  className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+                >
+                  <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+                <MortalityFeaturesPage />
+              </div>
+            ) : activePage === "effectiveness" ? (
+              <div className="space-y-6">
+                <button
+                  onClick={() => setActivePage("dashboard")}
+                  className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
+                >
+                  <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+                <EffectivenessDashboard />
+              </div>
+            ) : null}
+
+            <DashboardPage
+              data={data}
+              isUploading={isUploading}
+              error={error}
+              onLoadSample={loadSampleData}
+              onFileUpload={onFileUpload}
+              onSelectPatient={(p) => {
+                setSelectedPatient(p);
+                setActivePage("dashboard");
+              }}
+            />
+          </>
+        )}
       </main>
 
       {/* Footer / Context */}

@@ -23,10 +23,10 @@ interface DashboardPageProps {
   error: string | null;
   onLoadSample: () => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectPatient: (patient: PatientData) => void;
 }
 
-export default function DashboardPage({ data, isUploading, error, onLoadSample, onFileUpload }: DashboardPageProps) {
-  const [activePatient, setActivePatient] = useState<PatientData | null>(null);
+export default function DashboardPage({ data, isUploading, error, onLoadSample, onFileUpload, onSelectPatient }: DashboardPageProps) {
   const [showDeltaCPOInfo, setShowDeltaCPOInfo] = useState(false);
   const [showRiskCounterInfo, setShowRiskCounterInfo] = useState(false);
   const [showRecoveryScoreInfo, setShowRecoveryScoreInfo] = useState(false);
@@ -379,24 +379,20 @@ export default function DashboardPage({ data, isUploading, error, onLoadSample, 
                   {data.patients.map((p, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActivePatient(p)}
-                      className={cn(
-                        "w-full text-left p-4 border-b border-dark-border transition-all group relative",
-                        activePatient?.id === p.id ? "bg-blue-600 text-white" : "hover:bg-dark-accent"
-                      )}
+                      onClick={() => onSelectPatient(p)}
+                      className="w-full text-left p-4 border-b border-dark-border hover:bg-dark-accent transition-all group relative"
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <span className={cn("text-xs font-bold truncate pr-4", activePatient?.id === p.id ? "text-white" : "text-dark-text-primary")}>{p.name}</span>
+                        <span className="text-xs font-bold truncate pr-4 text-dark-text-primary">{p.name}</span>
                         <div className="flex gap-1 items-center">
-                          {p.escalationAlert && <AlertTriangle size={12} className={cn("text-red-400 animate-pulse transition-all", activePatient?.id === p.id ? "text-white" : "")} />}
-                          {p.isEscalated && activePatient?.id !== p.id && <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shrink-0 shadow-[0_0_5px_rgba(251,146,60,0.5)]" />}
+                          {p.escalationAlert && <AlertTriangle size={12} className="text-red-400 animate-pulse transition-all" />}
+                          {p.isEscalated && <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shrink-0 shadow-[0_0_5px_rgba(251,146,60,0.5)]" />}
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-[10px] font-mono opacity-60">
                         <span>PAPI: {p.postPAPI.toFixed(1)}</span>
                         <span>CPO: {p.postCPO.toFixed(2)}</span>
                       </div>
-                      {activePatient?.id === p.id && <motion.div layoutId="active-indicator" className="absolute left-0 top-0 bottom-0 w-1 bg-white" />}
                     </button>
                   ))}
                 </div>
@@ -405,202 +401,6 @@ export default function DashboardPage({ data, isUploading, error, onLoadSample, 
           </div>
         )}
       </main>
-
-      {/* Patient Detail Modal */}
-      <AnimatePresence>
-        {activePatient && data && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-20">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-dark-bg/90 backdrop-blur-md"
-              onClick={() => setActivePatient(null)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="relative bg-dark-card w-full max-w-5xl max-h-full overflow-hidden rounded-xl border border-dark-border shadow-[0_0_100px_rgba(0,0,0,0.5)]"
-            >
-              <div className="p-10 border-b border-dark-border bg-dark-accent flex justify-between items-end">
-                <div>
-                  <span className="text-dark-text-muted uppercase tracking-[0.3em] text-[10px] font-bold mb-2 block italic serif">Clinical Profile / Cardiac Analysis</span>
-                  <div className="flex items-center gap-4">
-                    <h2 className="text-5xl font-light tracking-tight">{activePatient.name}</h2>
-                    <div className="flex gap-2">
-                      {activePatient.isEscalated && (
-                        <span className="bg-orange-500/10 text-orange-400 border border-orange-500/30 text-[10px] px-3 py-1 rounded font-black uppercase tracking-widest shadow-lg shadow-orange-950/20">Escalated</span>
-                      )}
-                      {activePatient.escalationAlert && (
-                        <motion.span
-                          animate={{ opacity: [1, 0.5, 1], scale: [1, 1.05, 1] }}
-                          transition={{ repeat: Infinity, duration: 1.5 }}
-                          className="bg-red-500 text-white text-[10px] px-3 py-1 rounded font-black uppercase tracking-widest shadow-lg shadow-red-900/50 flex items-center gap-1"
-                        >
-                          <AlertTriangle size={10} /> Escalation Alert
-                        </motion.span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-6 mt-4 text-xs font-mono text-dark-text-muted">
-                    <span>ID: #{activePatient.id.split('-').join('')}00</span>
-                    <span>Timing: {activePatient.daysBetweenRhcAndImpella} days post-RHC</span>
-                    {activePatient.age && <span>Age: {Math.round(activePatient.age)}</span>}
-                    {activePatient.scai && <span>SCAI: {activePatient.scai}</span>}
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="p-4 bg-dark-bg border border-dark-border rounded text-center min-w-[120px]">
-                    <div className="text-[10px] text-dark-text-muted uppercase font-black mb-1">Status</div>
-                    <div className="text-lg text-emerald-400 font-bold tracking-widest uppercase">Stabilizing</div>
-                  </div>
-                  <button
-                    onClick={() => setActivePatient(null)}
-                    className="bg-dark-border/50 p-2 rounded-full hover:bg-dark-border transition-all h-8 w-8 flex items-center justify-center self-start"
-                  >
-                    <AlertTriangle size={16} className="rotate-45" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-10 grid grid-cols-12 gap-12 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
-                <div className="col-span-12 lg:col-span-8 space-y-10">
-                  <section>
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-semibold flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full" /> Hemodynamic Trends (48h Window)</h3>
-                      <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-dark-text-muted">
-                        <span>Baseline</span>
-                        <span>48h Post</span>
-                      </div>
-                    </div>
-                    {activePatient.escalationAlert && (
-                      <div className="mb-8 p-4 bg-red-950/30 border-l-4 border-red-500 rounded-r shadow-lg animate-in fade-in slide-in-from-left duration-500">
-                        <div className="flex items-center gap-3 text-red-400 mb-2">
-                          <AlertTriangle size={18} />
-                          <span className="font-bold uppercase tracking-[0.1em] text-xs">Knowledge Base Prioritized Alert</span>
-                        </div>
-                        <p className="text-sm text-red-200/80 leading-relaxed font-serif italic">
-                          This patient's PV Loop (Ees/Ea: {activePatient.eesEa?.toFixed(3)}) mirrors historical outcomes that required critical escalation. Prioritize immediate clinical review and potential escalation preparation.
-                        </p>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-x-16 gap-y-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center border-b border-dark-border py-3">
-                          <span className="text-dark-text-secondary font-medium text-sm">RA Pressure</span>
-                          <div className="flex gap-4 items-center">
-                            <span className="text-dark-text-muted font-mono text-xs line-through">{activePatient.preRA}</span>
-                            <span className={cn("text-3xl font-mono", activePatient.postRA > 20 ? "text-orange-400" : "text-dark-text-primary")}>{activePatient.postRA}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-dark-border py-3">
-                          <span className="text-dark-text-secondary font-medium text-sm">PCWP (Wedge)</span>
-                          <div className="flex gap-4 items-center">
-                            <span className="text-dark-text-muted font-mono text-xs line-through">{activePatient.prePCWP}</span>
-                            <span className="text-3xl font-mono text-emerald-400">{activePatient.postPCWP}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-dark-border py-3">
-                          <span className="text-dark-text-secondary font-medium text-sm">CPO (Power)</span>
-                          <div className="flex gap-4 items-center">
-                            <span className="text-dark-text-muted font-mono text-xs line-through">{activePatient.preCPO.toFixed(2)}</span>
-                            <span className="text-3xl font-mono">{activePatient.postCPO.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center border-b border-dark-border py-4">
-                          <span className="text-dark-text-secondary font-medium text-sm">PAPI Index</span>
-                          <div className="flex gap-4 items-center">
-                            <span className={cn("text-3xl font-mono", activePatient.postPAPI < 1.0 ? "text-red-400" : "text-blue-400")}>{activePatient.postPAPI.toFixed(2)}</span>
-                            <span className="text-[10px] text-dark-text-muted font-bold uppercase tracking-widest">{activePatient.postPAPI > 1.5 ? "Good" : "Monitor"}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-dark-border py-4">
-                          <span className="text-dark-text-secondary font-medium text-sm">PV Loop (Ees/Ea)</span>
-                          <div className="flex gap-4 items-center">
-                            <span className="text-3xl font-mono text-blue-300">{activePatient.eesEa?.toFixed(3) || "N/A"}</span>
-                            <span className="text-[10px] text-dark-text-muted font-bold uppercase tracking-widest italic font-serif">Simulated</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-dark-border py-4">
-                          <span className="text-dark-text-secondary font-medium text-sm">VIS Score</span>
-                          <div className="flex gap-4 items-center">
-                            <span className="text-dark-text-muted font-mono text-xs line-through">{activePatient.preVIS}</span>
-                            <span className="text-3xl font-mono">{activePatient.postVIS}</span>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-dark-accent rounded-lg flex items-center justify-between border border-white/5">
-                          <span className="text-[10px] font-black uppercase text-dark-text-muted tracking-widest">Local Survivability</span>
-                          <span className="text-xl font-mono text-blue-400 font-bold">
-                            {Math.round((data.predictions?.find(p => p.patientId === activePatient.id)?.recoveryProbability || 0) * 100)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="bg-dark-accent p-6 rounded-xl border border-dark-border">
-                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-6"><div className="w-2 h-2 bg-emerald-500 rounded-full" /> Mechanical Support</h3>
-                    <div className="grid grid-cols-3 gap-8">
-                      <div className="border-r border-dark-border pr-6">
-                        <div className="text-[10px] text-dark-text-muted uppercase font-black mb-1">Model</div>
-                        <div className="text-xl font-light">Impella CP</div>
-                        <div className="text-xs text-blue-400 mt-1 uppercase tracking-widest">Normal Placement</div>
-                      </div>
-                      <div className="border-r border-dark-border pr-6">
-                        <div className="text-[10px] text-dark-text-muted uppercase font-black mb-1">Current Flow</div>
-                        <div className="text-3xl font-mono text-emerald-400">{activePatient.impellaFlow}<span className="text-sm ml-1 text-dark-text-muted">L/min</span></div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-dark-text-muted uppercase font-black mb-1">P-Level</div>
-                        <div className="text-3xl font-mono tracking-tighter">P-{activePatient.performanceLevel}</div>
-                      </div>
-                    </div>
-                  </section>
-                </div>
-
-                <div className="col-span-12 lg:col-span-4 space-y-10">
-                  <section>
-                    <h3 className="text-lg font-semibold mb-6 italic serif">Clinical Outcomes</h3>
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-12 h-12 rounded-full border flex items-center justify-center transition-all", activePatient.renalFailure ? "bg-red-900/20 border-red-500/50 text-red-500" : "bg-emerald-900/20 border-emerald-500/50 text-emerald-500")}>
-                          {activePatient.renalFailure ? "✕" : "✔"}
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm tracking-wide">Renal Function</div>
-                          <div className="text-xs text-dark-text-muted uppercase font-mono">{activePatient.renalFailure ? "Failure Reported" : "Normal Clearance"}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-12 h-12 rounded-full border flex items-center justify-center transition-all", activePatient.intubation ? "bg-red-900/20 border-red-500/50 text-red-500" : "bg-emerald-900/20 border-emerald-500/50 text-emerald-500")}>
-                          {activePatient.intubation ? "✕" : "✔"}
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm tracking-wide">Airway Status</div>
-                          <div className="text-xs text-dark-text-muted uppercase font-mono">{activePatient.intubation ? "Mechanical Vent" : "Spontaneous Breathing"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="border-l-4 border-blue-500 bg-dark-accent p-6 rounded relative shadow-2xl">
-                    <h4 className="text-[10px] font-black uppercase text-dark-text-muted tracking-widest mb-4">Attending Clinician Note</h4>
-                    <p className="text-sm italic leading-relaxed text-dark-text-secondary">
-                      {activePatient.notes || "Initial recovery phase. Hemodynamics within acceptable drift range. Continued monitoring of RV pressures recommended via PAPI indexing."}
-                    </p>
-                    <div className="mt-6 flex justify-end">
-                      <span className="text-[10px] font-mono text-dark-text-muted italic">Digitally Signed // Secure System</span>
-                    </div>
-                  </section>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

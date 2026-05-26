@@ -144,6 +144,25 @@ export interface PatientData {
     escalation?: number;
     rvDysfunction?: number;
   };
+
+  // Weaning & Escalation Checklist Results
+  checklistResults?: {
+    weaningScore: number;       // Composite weaning index (0-100)
+    weaningPassed: boolean;
+    escalationWarning: boolean;
+    weaningCriteria: { label: string; passed: boolean; value: string; threshold: string }[];
+    escalationCriteria: { label: string; triggered: boolean; value: string; threshold: string }[];
+  };
+
+  // Explainable AI (SHAP Drivers)
+  riskDrivers?: {
+    survivalDrivers: { feature: string; impact: number; label: string; value: string }[];
+    escalationDrivers: { feature: string; impact: number; label: string; value: string }[];
+    rvDrivers: { feature: string; impact: number; label: string; value: string }[];
+  };
+
+  // AI Shock Team Handoff Summary
+  aiClinicalSummary?: string;
 }
 
 export interface ClusterAssignment {
