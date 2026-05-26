@@ -9,6 +9,9 @@ import * as fs from "fs";
 import { execFile } from "child_process";
 import { PatientData, processExcelData, trainAndPredict, checkEscalationAlerts, runPythonPredictions } from "./src/excel-parser";
 
+const app = express();
+const PORT = 2956;
+
 // Clinical Gemini client is initialized dynamically inside generateClinicalSummary on-demand.
 
 // Clinical Decision Support Checklist & Driver Calculator
@@ -290,8 +293,6 @@ Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate:
 }
 
 async function startServer() {
-  const app = express();
-  const PORT = 2956;
   const upload = multer({ storage: multer.memoryStorage() });
 
   app.use(express.json());
@@ -847,11 +848,15 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Impella Analytics Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.VERCEL !== "1") {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Impella Analytics Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer().catch((err) => {
   console.error("Failed to start server:", err);
 });
+
+export default app;
