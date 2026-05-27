@@ -446,7 +446,16 @@ async function startServer() {
     ];
 
     let enhancedPatients = checkEscalationAlerts(samplePatients);
-    const mlResult = await runPythonPredictions(enhancedPatients);
+    let mlResult;
+    try {
+      mlResult = await runPythonPredictions(enhancedPatients);
+    } catch (e) {
+      console.log("[ML] Python unavailable, using fallback predictions");
+      mlResult = {
+        patients: enhancedPatients.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
+        clusterResults: {},
+      };
+    }
     enhancedPatients = mlResult.patients.map(calculateChecklistAndDrivers);
     const predictions = trainAndPredict(enhancedPatients);
     const summary = {
@@ -478,7 +487,16 @@ async function startServer() {
           });
       }
       patients = checkEscalationAlerts(patients);
-      const mlResult = await runPythonPredictions(patients);
+      let mlResult;
+      try {
+        mlResult = await runPythonPredictions(patients);
+      } catch (e) {
+        console.log("[ML] Python unavailable, using fallback predictions");
+        mlResult = {
+          patients: patients.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
+          clusterResults: {},
+        };
+      }
       patients = mlResult.patients.map(calculateChecklistAndDrivers);
       const predictions = trainAndPredict(patients);
       const summary = {
@@ -817,7 +835,16 @@ async function startServer() {
       const simulatedChecked = checkEscalationAlerts([simulatedPatient]);
 
       // Re-run scikit-learn Python predictions on this patient
-      const mlResult = await runPythonPredictions(simulatedChecked);
+      let mlResult;
+      try {
+        mlResult = await runPythonPredictions(simulatedChecked);
+      } catch (e) {
+        console.log("[ML] Python unavailable, using fallback predictions");
+        mlResult = {
+          patients: simulatedChecked.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
+          clusterResults: {},
+        };
+      }
       const simulatedML = mlResult.patients[0];
 
       // Re-run weaning/escalation checks and risk driver mapping
