@@ -52,6 +52,11 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
   const [aiMemo, setAiMemo] = useState<{ impression: string; hemodynamics: string; risk: string; management: string } | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<number>(0);
+
+  const toggleSection = (idx: number) => {
+    setOpenSection(prev => prev === idx ? -1 : idx);
+  };
 
   // Cluster assignment for this patient
   const [clusterInfo, setClusterInfo] = useState<{ name: string; rec: string } | null>(null);
@@ -558,41 +563,69 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
               <div className="mt-4 divide-y divide-dark-border/60">
                 {/* Clinical Impression */}
                 {aiMemo.impression && (
-                <div className="bg-gradient-to-r from-purple-500/[0.08] to-transparent border-l-4 border-purple-400 px-5 py-4">
-                  <div className="text-[10px] font-bold text-purple-300 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                    <span className="text-purple-400">✦</span> Clinical Impression
+                <div className="bg-gradient-to-r from-purple-500/[0.08] to-transparent border-l-4 border-purple-400">
+                  <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" onClick={() => toggleSection(0)}>
+                    <div className="text-[10px] font-bold text-purple-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-purple-400">✦</span> Clinical Impression
+                    </div>
+                    <span className="text-purple-400 text-[10px] transition-transform duration-300">{openSection === 0 ? "▼" : "▶"}</span>
                   </div>
-                  <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.impression}</div>
+                  <div className={`overflow-hidden transition-all duration-300 ${openSection === 0 ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                    <div className="px-5 pb-4">
+                      <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.impression}</div>
+                    </div>
+                  </div>
                 </div>
                 )}
 
                 {/* Hemodynamic Spotlight */}
                 {aiMemo.hemodynamics && (
-                <div className="bg-gradient-to-r from-emerald-500/[0.07] to-transparent border-l-4 border-emerald-400 px-5 py-4">
-                  <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                    <span className="text-emerald-400">✦</span> Hemodynamic Spotlight
+                <div className="bg-gradient-to-r from-emerald-500/[0.07] to-transparent border-l-4 border-emerald-400">
+                  <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" onClick={() => toggleSection(1)}>
+                    <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-emerald-400">✦</span> Hemodynamic Spotlight
+                    </div>
+                    <span className="text-emerald-400 text-[10px] transition-transform duration-300">{openSection === 1 ? "▼" : "▶"}</span>
                   </div>
-                  <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.hemodynamics}</div>
+                  <div className={`overflow-hidden transition-all duration-300 ${openSection === 1 ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                    <div className="px-5 pb-4">
+                      <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.hemodynamics}</div>
+                    </div>
+                  </div>
                 </div>
                 )}
 
                 {/* Risk Assessment */}
                 {aiMemo.risk && (
-                <div className="bg-gradient-to-r from-amber-500/[0.07] to-transparent border-l-4 border-amber-400 px-5 py-4">
-                  <div className="text-[10px] font-bold text-amber-300 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                    <span className="text-amber-400">✦</span> Risk Assessment
+                <div className="bg-gradient-to-r from-amber-500/[0.07] to-transparent border-l-4 border-amber-400">
+                  <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" onClick={() => toggleSection(2)}>
+                    <div className="text-[10px] font-bold text-amber-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-amber-400">✦</span> Risk Assessment
+                    </div>
+                    <span className="text-amber-400 text-[10px] transition-transform duration-300">{openSection === 2 ? "▼" : "▶"}</span>
                   </div>
-                  <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.risk}</div>
+                  <div className={`overflow-hidden transition-all duration-300 ${openSection === 2 ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                    <div className="px-5 pb-4">
+                      <div className="text-[11px] leading-relaxed text-slate-100 font-mono">{aiMemo.risk}</div>
+                    </div>
+                  </div>
                 </div>
                 )}
 
                 {/* Management Plan */}
                 {aiMemo.management && (
-                <div className="bg-gradient-to-r from-blue-500/[0.07] to-transparent border-l-4 border-blue-400 px-5 py-4">
-                  <div className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                    <span className="text-blue-400">✦</span> Management Plan
+                <div className="bg-gradient-to-r from-blue-500/[0.07] to-transparent border-l-4 border-blue-400">
+                  <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" onClick={() => toggleSection(3)}>
+                    <div className="text-[10px] font-bold text-blue-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-blue-400">✦</span> Management Plan
+                    </div>
+                    <span className="text-blue-400 text-[10px] transition-transform duration-300">{openSection === 3 ? "▼" : "▶"}</span>
                   </div>
-                  <div className="text-[11px] leading-relaxed text-slate-100 font-mono whitespace-pre-line">{aiMemo.management}</div>
+                  <div className={`overflow-hidden transition-all duration-300 ${openSection === 3 ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                    <div className="px-5 pb-4">
+                      <div className="text-[11px] leading-relaxed text-slate-100 font-mono whitespace-pre-line">{aiMemo.management}</div>
+                    </div>
+                  </div>
                 </div>
                 )}
               </div>
