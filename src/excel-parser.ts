@@ -540,123 +540,195 @@ export function checkEscalationAlerts(patients: PatientData[]) {
 
 export function runPythonPredictions(patients: PatientData[]): Promise<{ patients: PatientData[]; clusterResults: Record<string, any> }> {
   return new Promise((resolve) => {
-    const payloadPatients = patients.map((p) => ({
-      id: p.id,
-      name: p.name,
-      age: p.age,
-      weight_kg: p.weightKg,
-      height_cm: p.heightCm,
-      gender: p.gender,
-      race: p.race,
-      cause_of_shock: p.causeOfShock,
-      scai_stage: p.scai,
-      days_between_rhc_and_impella: p.daysBetweenRhcAndImpella,
-      pre_ra: p.preRA,
-      pre_rvsp: p.preRVSP,
-      pre_rvdp: p.preRVDP,
-      pre_pasp: p.prePASP,
-      pre_padp: p.prePADP,
-      pre_map: p.preMAP,
-      pre_pcwp: p.prePCWP,
-      pre_pvr: p.prePVR,
-      pre_sbp: p.preSBP,
-      pre_dbp: p.preDBP,
-      pre_hr: p.preHR,
-      pre_tdco: p.preTDCO,
-      pre_sv: p.preSV,
-      pre_pa_o2: p.prePaO2,
-      pre_sp_o2: p.preSpO2,
-      pre_papi: p.prePAPI,
-      pre_cpo: p.preCPO,
-      pre_rv_cpo: p.preRVCPO,
-      post_ra: p.postRA,
-      post_rvsp: p.postRVSP,
-      post_rvdp: p.postRVDP,
-      post_pasp: p.postPASP,
-      post_padp: p.postPADP,
-      post_map: p.postMAP,
-      post_pcwp: p.postPCWP,
-      post_pvr: p.postPVR,
-      post_sbp: p.postSBP,
-      post_dbp: p.postDBP,
-      post_hr: p.postHR,
-      post_tdco: p.postTDCO,
-      post_sv: p.postSV,
-      post_pa_o2: p.postPaO2,
-      post_sp_o2: p.postSpO2,
-      post_papi: p.postPAPI,
-      post_cpo: p.postCPO,
-      post_rv_cpo: p.postRVCPO,
-      pre_rvedd: p.preRVEDD,
-      pre_tapse: p.preTAPSE,
-      pre_rv_s: p.preRVS,
-      pre_rv_fs: p.preRVFS,
-      pre_tr_severity: p.preTRSeverity,
-      pre_echo_pasp: p.preEchoPASP,
-      pre_lvedd: p.preLVEDd,
-      post_rvedd: p.postRVEDD,
-      post_tapse: p.postTAPSE,
-      post_rv_s: p.postRVS,
-      post_rv_fs: p.postRVFS,
-      post_tr_severity: p.postTRSeverity,
-      post_echo_pasp: p.postEchoPASP,
-      post_lvedd: p.postLVEDd,
-      pre_sodium: p.preSodium,
-      pre_potassium: p.prePotassium,
-      pre_hco3: p.preHCO3,
-      pre_creatinine: p.preCreatinine,
-      pre_egfr: p.preEGFR,
-      pre_hemoglobin: p.preHemoglobin,
-      pre_wbc: p.preWBC,
-      pre_ast: p.preAST,
-      pre_alt: p.preALT,
-      pre_bili: p.preBili,
-      pre_lactate: p.preLactate,
-      pre_ph: p.prePH,
-      post_sodium: p.postSodium,
-      post_potassium: p.postPotassium,
-      post_hco3: p.postHCO3,
-      post_creatinine: p.postCreatinine,
-      post_egfr: p.postEGFR,
-      post_hemoglobin: p.postHemoglobin,
-      post_wbc: p.postWBC,
-      post_ast: p.postAST,
-      post_alt: p.postALT,
-      post_bili: p.postBili,
-      post_lactate: p.postLactate,
-      post_ph: p.postPH,
-      dopamine: p.dopamine,
-      dobutamine: p.dobutamine,
-      epinephrine: p.epinephrine,
-      milrinone: p.milrinone,
-      norepinephrine: p.norepinephrine,
-      vasopressin: p.vasopressin,
-      vis_score: p.visScore,
-      pre_furosemide: p.preFurosemide,
-      post_furosemide: p.postFurosemide,
-      impella_performance: p.performanceLevel,
-      impella_flow: p.impellaFlow,
-      renal_failure: p.renalFailure ? 1 : 0,
-      intubation: p.intubation ? 1 : 0,
-      mcs_escalation: p.mcsEscalation ? 1 : 0,
-      ees: p.ees,
-      ea: p.ea,
-      ees_ea: p.eesEa,
-      esp: p.esp,
-      edp: p.edp,
-      pmax: p.pmax,
-      esv: p.esv,
-      edv: p.edv,
-      pv_sv: p.pvSV,
-      dp_dt_max: p.dpDtMax,
-      dp_dt_min: p.dpDtMin,
-      notes: p.notes,
-      survived: p.survived ? 1 : 0,
-      is_escalated: p.isEscalated ? 1 : 0,
-      delta_cpo: p.deltaCPO,
-      recovery_score: p.recoveryScore,
-    }));
+    const payloadPatients = patients.map((p) => {
+      const mapping: Record<string, any> = {
+        id: p.id,
+        name: p.name,
+        age: p.age,
+        weight_kg: p.weightKg,
+        height_cm: p.heightCm,
+        gender: p.gender,
+        race: p.race,
+        cause_of_shock: p.causeOfShock,
+        scai_stage: p.scai,
+        days_between_rhc_and_impella: p.daysBetweenRhcAndImpella,
+        pre_ra: p.preRA,
+        pre_rvsp: p.preRVSP,
+        pre_rvdp: p.preRVDP,
+        pre_pasp: p.prePASP,
+        pre_padp: p.prePADP,
+        pre_map: p.preMAP,
+        pre_pcwp: p.prePCWP,
+        pre_pvr: p.prePVR,
+        pre_sbp: p.preSBP,
+        pre_dbp: p.preDBP,
+        pre_hr: p.preHR,
+        pre_tdco: p.preTDCO,
+        pre_sv: p.preSV,
+        pre_pa_o2: p.prePaO2,
+        pre_sp_o2: p.preSpO2,
+        pre_papi: p.prePAPI,
+        pre_cpo: p.preCPO,
+        pre_rv_cpo: p.preRVCPO,
+        post_ra: p.postRA,
+        post_rvsp: p.postRVSP,
+        post_rvdp: p.postRVDP,
+        post_pasp: p.postPASP,
+        post_padp: p.postPADP,
+        post_map: p.postMAP,
+        post_pcwp: p.postPCWP,
+        post_pvr: p.postPVR,
+        post_sbp: p.postSBP,
+        post_dbp: p.postDBP,
+        post_hr: p.postHR,
+        post_tdco: p.postTDCO,
+        post_sv: p.postSV,
+        post_pa_o2: p.postPaO2,
+        post_sp_o2: p.postSpO2,
+        post_papi: p.postPAPI,
+        post_cpo: p.postCPO,
+        post_rv_cpo: p.postRVCPO,
+        pre_rvedd: p.preRVEDD,
+        pre_tapse: p.preTAPSE,
+        pre_rv_s: p.preRVS,
+        pre_rv_fs: p.preRVFS,
+        pre_tr_severity: p.preTRSeverity,
+        pre_echo_pasp: p.preEchoPASP,
+        pre_lvedd: p.preLVEDd,
+        post_rvedd: p.postRVEDD,
+        post_tapse: p.postTAPSE,
+        post_rv_s: p.postRVS,
+        post_rv_fs: p.postRVFS,
+        post_tr_severity: p.postTRSeverity,
+        post_echo_pasp: p.postEchoPASP,
+        post_lvedd: p.postLVEDd,
+        pre_sodium: p.preSodium,
+        pre_potassium: p.prePotassium,
+        pre_hco3: p.preHCO3,
+        pre_creatinine: p.preCreatinine,
+        pre_egfr: p.preEGFR,
+        pre_hemoglobin: p.preHemoglobin,
+        pre_wbc: p.preWBC,
+        pre_ast: p.preAST,
+        pre_alt: p.preALT,
+        pre_bili: p.preBili,
+        pre_lactate: p.preLactate,
+        pre_ph: p.prePH,
+        post_sodium: p.postSodium,
+        post_potassium: p.postPotassium,
+        post_hco3: p.postHCO3,
+        post_creatinine: p.postCreatinine,
+        post_egfr: p.postEGFR,
+        post_hemoglobin: p.postHemoglobin,
+        post_wbc: p.postWBC,
+        post_ast: p.postAST,
+        post_alt: p.postALT,
+        post_bili: p.postBili,
+        post_lactate: p.postLactate,
+        post_ph: p.postPH,
+        dopamine: p.dopamine,
+        dobutamine: p.dobutamine,
+        epinephrine: p.epinephrine,
+        milrinone: p.milrinone,
+        norepinephrine: p.norepinephrine,
+        vasopressin: p.vasopressin,
+        vis_score: p.visScore,
+        pre_furosemide: p.preFurosemide,
+        post_furosemide: p.postFurosemide,
+        impella_performance: p.performanceLevel,
+        impella_flow: p.impellaFlow,
+        renal_failure: p.renalFailure ? 1 : 0,
+        intubation: p.intubation ? 1 : 0,
+        mcs_escalation: p.mcsEscalation ? 1 : 0,
+        ees: p.ees,
+        ea: p.ea,
+        ees_ea: p.eesEa,
+        esp: p.esp,
+        edp: p.edp,
+        pmax: p.pmax,
+        esv: p.esv,
+        edv: p.edv,
+        pv_sv: p.pvSV,
+        dp_dt_max: p.dpDtMax,
+        dp_dt_min: p.dpDtMin,
+        notes: p.notes,
+        survived: p.survived ? 1 : 0,
+        is_escalated: p.isEscalated ? 1 : 0,
+        delta_cpo: p.deltaCPO,
+        recovery_score: p.recoveryScore,
+      };
+      return mapping;
+    });
 
+    const payload = JSON.stringify({ patients: payloadPatients });
+
+    // ---------------------------------------------------------------------------
+    // HTTP path — used on Vercel where Python is a separate serverless function
+    // ---------------------------------------------------------------------------
+    const pythonApiUrl = process.env.PYTHON_API_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    if (pythonApiUrl) {
+      const url = `${pythonApiUrl.replace(/\/+$/, "")}/api/predict`;
+      console.log("[ML] Calling HTTP endpoint:", url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000);
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          clearTimeout(timeout);
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`HTTP ${res.status}: ${text}`);
+          }
+          return res.json();
+        })
+        .then((result) => {
+          const predictions = result.predictions || [];
+          const clusters = result.clusters || [];
+          console.log("[ML] Received", predictions.length, "predictions and", clusters.length, "clusters via HTTP");
+
+          const enhanced = patients.map((p) => {
+            const match = predictions.find((pred: any) => pred.patientId === p.id);
+            if (match && match.scores) {
+              return {
+                ...p,
+                riskScores: {
+                  survival: match.scores.survival,
+                  escalation: match.scores.escalation,
+                  rvDysfunction: match.scores.rv_dysfunction,
+                },
+              };
+            }
+            return p;
+          });
+
+          const clusterResults: Record<string, any> = {};
+          for (const c of clusters) {
+            clusterResults[c.patientId] = {
+              clusterLabel: c.cluster_label,
+              clusterName: c.cluster_name,
+              recommendation: c.recommendation,
+              distances: c.distances,
+              similarities: c.similarities,
+            };
+          }
+          resolve({ patients: enhanced, clusterResults });
+        })
+        .catch((err) => {
+          clearTimeout(timeout);
+          console.error("[ML] HTTP prediction failed:", err);
+          resolve({ patients, clusterResults: {} });
+        });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Subprocess path — local development
+    // ---------------------------------------------------------------------------
     // Find a working Python interpreter with required packages
     const pythonCandidates = [
       process.env.PYTHON_PATH,
