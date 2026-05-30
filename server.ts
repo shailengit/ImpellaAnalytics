@@ -624,6 +624,50 @@ async function startServer() {
     distances: Record<string, number>;
     similarities: Record<string, number>;
   } | null> {
+    // ---------------------------------------------------------------------------
+    // HTTP path — used on Vercel where Python is a separate function
+    // ---------------------------------------------------------------------------
+    const pythonApiUrl = process.env.PYTHON_API_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    if (pythonApiUrl) {
+      return new Promise((resolve) => {
+        const url = `${pythonApiUrl.replace(/\/+$/, "")}/api/predict`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 120000);
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patients: [patient] }),
+          signal: controller.signal,
+        })
+          .then(async (res) => {
+            clearTimeout(timeout);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then((result) => {
+            const clusters = result.clusters || [];
+            if (clusters.length === 0) { resolve(null); return; }
+            const c = clusters[0];
+            resolve({
+              clusterLabel: c.cluster_label,
+              clusterName: c.cluster_name,
+              recommendation: c.recommendation,
+              distances: c.distances,
+              similarities: c.similarities,
+            });
+          })
+          .catch((err) => {
+            clearTimeout(timeout);
+            console.error("[Cluster] HTTP error:", err);
+            resolve(null);
+          });
+      });
+    }
+
+    // ---------------------------------------------------------------------------
+    // Subprocess path — local development
+    // ---------------------------------------------------------------------------
     return new Promise((resolve) => {
       const pythonCandidates = [
         process.env.PYTHON_PATH,
