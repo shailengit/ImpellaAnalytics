@@ -36,6 +36,9 @@ import joblib
 
 warnings.filterwarnings("ignore")
 
+# Import model weights exporter for automatic JS inference update
+from export_model_weights import export as export_model_weights
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -646,6 +649,9 @@ def main():
     }
     with open(OUTPUT_DIR / "model_metadata.json", "w") as f:
         json.dump(meta, f, indent=2)
+
+    print("\n[7/6] Exporting model weights for JS inference...")
+    export_model_weights()
 
     print("\nPipeline complete.")
 
