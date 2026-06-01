@@ -5,13 +5,9 @@
   "functions": {
     "api/index.ts": {
       "includeFiles": "dist/**"
-    },
-    "api/predict.py": {
-      "includeFiles": "ml_output/**"
     }
   },
   "routes": [
-    { "src": "/api/predict", "dest": "api/predict.py" },
     { "src": "/api/(.*)", "dest": "api/index.ts" },
     { "src": "/assets/(.*)", "dest": "dist/$1" },
     { "src": "/(.*)", "dest": "dist/index.html" }

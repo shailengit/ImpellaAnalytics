@@ -6,8 +6,8 @@ import * as XLSX from "xlsx";
 import { GoogleGenAI } from "@google/genai";
 import * as ss from "simple-statistics";
 import * as fs from "fs";
-import { execFile } from "child_process";
 import { PatientData, processExcelData, trainAndPredict, checkEscalationAlerts, runPythonPredictions } from "./src/excel-parser";
+import { predictFromJsModels } from "./src/ml-models/predict";
 
 const app = express();
 const PORT = 2956;
@@ -446,16 +446,7 @@ async function startServer() {
     ];
 
     let enhancedPatients = checkEscalationAlerts(samplePatients);
-    let mlResult;
-    try {
-      mlResult = await runPythonPredictions(enhancedPatients);
-    } catch (e) {
-      console.log("[ML] Python unavailable, using fallback predictions");
-      mlResult = {
-        patients: enhancedPatients.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
-        clusterResults: {},
-      };
-    }
+    const mlResult = await runPythonPredictions(enhancedPatients);
     enhancedPatients = mlResult.patients.map(calculateChecklistAndDrivers);
     const predictions = trainAndPredict(enhancedPatients);
     const summary = {
@@ -487,16 +478,7 @@ async function startServer() {
           });
       }
       patients = checkEscalationAlerts(patients);
-      let mlResult;
-      try {
-        mlResult = await runPythonPredictions(patients);
-      } catch (e) {
-        console.log("[ML] Python unavailable, using fallback predictions");
-        mlResult = {
-          patients: patients.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
-          clusterResults: {},
-        };
-      }
+      const mlResult = await runPythonPredictions(patients);
       patients = mlResult.patients.map(calculateChecklistAndDrivers);
       const predictions = trainAndPredict(patients);
       const summary = {
@@ -624,175 +606,9 @@ async function startServer() {
     distances: Record<string, number>;
     similarities: Record<string, number>;
   } | null> {
-    // ---------------------------------------------------------------------------
-    // HTTP path — used on Vercel where Python is a separate function
-    // ---------------------------------------------------------------------------
-    const pythonApiUrl = process.env.PYTHON_API_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-    if (pythonApiUrl) {
-      return new Promise((resolve) => {
-        const url = `${pythonApiUrl.replace(/\/+$/, "")}/api/predict`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 120000);
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ patients: [patient] }),
-          signal: controller.signal,
-        })
-          .then(async (res) => {
-            clearTimeout(timeout);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-          })
-          .then((result) => {
-            const clusters = result.clusters || [];
-            if (clusters.length === 0) { resolve(null); return; }
-            const c = clusters[0];
-            resolve({
-              clusterLabel: c.cluster_label,
-              clusterName: c.cluster_name,
-              recommendation: c.recommendation,
-              distances: c.distances,
-              similarities: c.similarities,
-            });
-          })
-          .catch((err) => {
-            clearTimeout(timeout);
-            console.error("[Cluster] HTTP error:", err);
-            resolve(null);
-          });
-      });
-    }
-
-    // ---------------------------------------------------------------------------
-    // Subprocess path — local development
-    // ---------------------------------------------------------------------------
-    return new Promise((resolve) => {
-      const pythonCandidates = [
-        process.env.PYTHON_PATH,
-        "/Users/shailendrakaushik/Documents/Python/AlgoTrading/ALGOVIBES/venv/bin/python3",
-        "/opt/anaconda3/bin/python3",
-        "/opt/homebrew/bin/python3",
-        "/usr/local/bin/python3",
-        "python3",
-      ].filter(Boolean) as string[];
-
-      let pythonPath = "python3";
-      for (const py of pythonCandidates) {
-        if (fs.existsSync(py)) {
-          pythonPath = py;
-          break;
-        }
-      }
-
-      const payload = {
-        id: patient.id,
-        name: patient.name,
-        age: patient.age,
-        weight_kg: patient.weightKg,
-        height_cm: patient.heightCm,
-        gender: patient.gender,
-        race: patient.race,
-        scai_stage: patient.scai,
-        pre_ra: patient.preRA,
-        pre_rvsp: patient.preRVSP,
-        pre_rvdp: patient.preRVDP,
-        pre_pasp: patient.prePASP,
-        pre_padp: patient.prePADP,
-        pre_map: patient.preMAP,
-        pre_pcwp: patient.prePCWP,
-        pre_pvr: patient.prePVR,
-        pre_sbp: patient.preSBP,
-        pre_dbp: patient.preDBP,
-        pre_hr: patient.preHR,
-        pre_tdco: patient.preTDCO,
-        pre_papi: patient.prePAPI,
-        pre_cpo: patient.preCPO,
-        post_ra: patient.postRA,
-        post_rvsp: patient.postRVSP,
-        post_rvdp: patient.postRVDP,
-        post_pasp: patient.postPASP,
-        post_padp: patient.postPADP,
-        post_map: patient.postMAP,
-        post_pcwp: patient.postPCWP,
-        post_pvr: patient.postPVR,
-        post_sbp: patient.postSBP,
-        post_dbp: patient.postDBP,
-        post_hr: patient.postHR,
-        post_tdco: patient.postTDCO,
-        post_papi: patient.postPAPI,
-        post_cpo: patient.postCPO,
-        pre_lactate: patient.preLactate,
-        post_lactate: patient.postLactate,
-        pre_creatinine: patient.preCreatinine,
-        post_creatinine: patient.postCreatinine,
-        pre_egfr: patient.preEGFR,
-        pre_hco3: patient.preHCO3,
-        pre_alt: patient.preALT,
-        pre_sodium: patient.preSodium,
-        pre_wbc: patient.preWBC,
-        pre_hemoglobin: patient.preHemoglobin,
-        pre_bili: patient.preBili,
-        pre_tapse: patient.preTAPSE,
-        pre_lvedd: patient.preLVEDd,
-      };
-
-      const child = execFile(
-        pythonPath,
-        ["scripts/predict_all.py"],
-        { cwd: process.cwd(), timeout: 15000 },
-        (error, stdout, stderr) => {
-          if (!stdout) {
-            console.error("[Cluster] No stdout:", error, stderr);
-            resolve(null);
-            return;
-          }
-          try {
-            const result = JSON.parse(stdout.trim());
-            if (result.error) {
-              console.error("[Cluster] Error:", result.error);
-              resolve(null);
-              return;
-            }
-            const clusters = result.clusters || [];
-            if (clusters.length === 0) {
-              resolve(null);
-              return;
-            }
-            const c = clusters[0];
-            resolve({
-              clusterLabel: c.cluster_label,
-              clusterName: c.cluster_name,
-              recommendation: c.recommendation,
-              distances: c.distances,
-              similarities: c.similarities,
-            });
-          } catch (parseErr) {
-            console.error("[Cluster] Parse error:", parseErr, "stdout:", stdout);
-            resolve(null);
-          }
-        },
-      );
-
-      child.on("error", (spawnErr) => {
-        console.error("[Cluster] Spawn error:", spawnErr);
-        resolve(null);
-      });
-
-      child.stdin?.on("error", (stdinErr: any) => {
-        console.error("[Cluster] Python stdin error (EPIPE):", stdinErr.message);
-        resolve(null);
-      });
-
-      try {
-        child.stdin?.write(JSON.stringify({ patients: [payload] }));
-        child.stdin?.end();
-      } catch (pipeErr) {
-        console.error("[Cluster] Pipe error:", pipeErr);
-        resolve(null);
-      }
-    });
+    const result = predictFromJsModels([patient]);
+    const clusterResult = result.clusterResults[patient.id];
+    return Promise.resolve(clusterResult || null);
   }
 
   app.get("/api/cluster-profiles", async (req, res) => {
@@ -878,17 +694,8 @@ async function startServer() {
       // Re-evaluate escalation alerts (Ees/Ea strict match)
       const simulatedChecked = checkEscalationAlerts([simulatedPatient]);
 
-      // Re-run scikit-learn Python predictions on this patient
-      let mlResult;
-      try {
-        mlResult = await runPythonPredictions(simulatedChecked);
-      } catch (e) {
-        console.log("[ML] Python unavailable, using fallback predictions");
-        mlResult = {
-          patients: simulatedChecked.map(p => ({ ...p, riskScores: { survival: 0.5, escalation: 0.5, rvDysfunction: 0.5 } })),
-          clusterResults: {},
-        };
-      }
+      // Re-run predictions on this patient
+      const mlResult = await runPythonPredictions(simulatedChecked);
       const simulatedML = mlResult.patients[0];
 
       // Re-run weaning/escalation checks and risk driver mapping
