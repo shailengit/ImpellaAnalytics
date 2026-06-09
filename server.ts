@@ -286,6 +286,186 @@ Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate:
   return getFallbackSummary(patient, true);
 }
 
+// ---------------------------------------------------------------------------
+// Decision Support Data Attachment (Phase 1: static JSON)
+// ---------------------------------------------------------------------------
+
+interface BootstrapPatient {
+  patientId: string;
+  prediction_mean: number | null;
+  ci_lower: number | null;
+  ci_upper: number | null;
+}
+
+interface BootstrapTargetData {
+  patients: BootstrapPatient[];
+  global_auc_mean: number;
+  global_auc_ci_lower: number;
+  global_auc_ci_upper: number;
+  n_bootstrap: number;
+  confidence_level: number;
+}
+
+interface BootstrapData {
+  survival: BootstrapTargetData;
+  escalation: BootstrapTargetData;
+  rv_dysfunction: BootstrapTargetData;
+}
+
+interface TrajectoryPatient {
+  patientId: string;
+  name: string;
+  matches: number;
+  n_valid: number;
+  delta_cpo_mean: number | null;
+  delta_cpo_ci_lower: number | null;
+  delta_cpo_ci_upper: number | null;
+  delta_papi_mean: number | null;
+  delta_papi_ci_lower: number | null;
+  delta_papi_ci_upper: number | null;
+  delta_lactate_mean: number | null;
+  delta_lactate_ci_lower: number | null;
+  delta_lactate_ci_upper: number | null;
+  escalation_rate: number | null;
+  survival_rate: number | null;
+  cluster_id: number | null;
+  cluster_name: string | null;
+}
+
+interface TrajectoryDataRaw {
+  patients: TrajectoryPatient[];
+  method: string;
+  k: number;
+  features: string[];
+}
+
+function loadDecisionSupportData(): {
+  bootstrap: BootstrapData | null;
+  trajectory: TrajectoryDataRaw | null;
+} {
+  try {
+    const bootstrapPath = path.join(process.cwd(), "ml_output/decision_support_bootstrap.json");
+    const trajectoryPath = path.join(process.cwd(), "ml_output/patient_trajectories.json");
+    const bootstrap: BootstrapData = fs.existsSync(bootstrapPath)
+      ? JSON.parse(fs.readFileSync(bootstrapPath, "utf8"))
+      : null;
+    const trajectory: TrajectoryDataRaw = fs.existsSync(trajectoryPath)
+      ? JSON.parse(fs.readFileSync(trajectoryPath, "utf8"))
+      : null;
+    return { bootstrap, trajectory };
+  } catch (err) {
+    console.warn("Failed to load decision support JSON files:", err);
+    return { bootstrap: null, trajectory: null };
+  }
+}
+
+function attachDecisionSupportData(
+  patients: PatientData[],
+  bootstrap: BootstrapData | null,
+  trajectory: TrajectoryDataRaw | null,
+): PatientData[] {
+  if (!bootstrap && !trajectory) return patients;
+
+  // Build lookup maps
+  const bootstrapMaps: Record<string, Map<string, BootstrapPatient>> = {};
+  if (bootstrap) {
+    for (const target of ["survival", "escalation", "rv_dysfunction"] as const) {
+      const m = new Map<string, BootstrapPatient>();
+      for (const p of bootstrap[target].patients) {
+        m.set(p.patientId, p);
+      }
+      bootstrapMaps[target] = m;
+    }
+  }
+
+  const trajMap = new Map<string, TrajectoryPatient>();
+  if (trajectory) {
+    for (const p of trajectory.patients) {
+      trajMap.set(p.patientId, p);
+    }
+  }
+
+  // Global model performance (same for all patients)
+  let modelPerf: any = undefined;
+  if (bootstrap) {
+    modelPerf = {
+      survival: {
+        global_auc_mean: bootstrap.survival.global_auc_mean,
+        global_auc_ci_lower: bootstrap.survival.global_auc_ci_lower,
+        global_auc_ci_upper: bootstrap.survival.global_auc_ci_upper,
+        n_bootstrap: bootstrap.survival.n_bootstrap,
+      },
+      escalation: {
+        global_auc_mean: bootstrap.escalation.global_auc_mean,
+        global_auc_ci_lower: bootstrap.escalation.global_auc_ci_lower,
+        global_auc_ci_upper: bootstrap.escalation.global_auc_ci_upper,
+        n_bootstrap: bootstrap.escalation.n_bootstrap,
+      },
+      rv_dysfunction: {
+        global_auc_mean: bootstrap.rv_dysfunction.global_auc_mean,
+        global_auc_ci_lower: bootstrap.rv_dysfunction.global_auc_ci_lower,
+        global_auc_ci_upper: bootstrap.rv_dysfunction.global_auc_ci_upper,
+        n_bootstrap: bootstrap.rv_dysfunction.n_bootstrap,
+      },
+    };
+  }
+
+  return patients.map((p) => {
+    const pid = p.id;
+
+    // Build bootstrapCI
+    let bootstrapCI: any = undefined;
+    if (bootstrap) {
+      const surv = bootstrapMaps["survival"].get(pid);
+      const esc = bootstrapMaps["escalation"].get(pid);
+      const rv = bootstrapMaps["rv_dysfunction"].get(pid);
+      if (surv || esc || rv) {
+        bootstrapCI = {
+          survival: surv
+            ? { prediction_mean: surv.prediction_mean ?? 0, ci_lower: surv.ci_lower, ci_upper: surv.ci_upper }
+            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
+          escalation: esc
+            ? { prediction_mean: esc.prediction_mean ?? 0, ci_lower: esc.ci_lower, ci_upper: esc.ci_upper }
+            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
+          rv_dysfunction: rv
+            ? { prediction_mean: rv.prediction_mean ?? 0, ci_lower: rv.ci_lower, ci_upper: rv.ci_upper }
+            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
+        };
+      }
+    }
+
+    // Build trajectoryData
+    let trajectoryData: any = undefined;
+    const traj = trajMap.get(pid);
+    if (traj) {
+      trajectoryData = {
+        cluster_id: traj.cluster_id,
+        cluster_name: traj.cluster_name,
+        matches: traj.matches,
+        n_valid: traj.n_valid,
+        delta_cpo_mean: traj.delta_cpo_mean,
+        delta_cpo_ci_lower: traj.delta_cpo_ci_lower,
+        delta_cpo_ci_upper: traj.delta_cpo_ci_upper,
+        delta_papi_mean: traj.delta_papi_mean,
+        delta_papi_ci_lower: traj.delta_papi_ci_lower,
+        delta_papi_ci_upper: traj.delta_papi_ci_upper,
+        delta_lactate_mean: traj.delta_lactate_mean,
+        delta_lactate_ci_lower: traj.delta_lactate_ci_lower,
+        delta_lactate_ci_upper: traj.delta_lactate_ci_upper,
+        escalation_rate: traj.escalation_rate,
+        survival_rate: traj.survival_rate,
+      };
+    }
+
+    return {
+      ...p,
+      ...(bootstrapCI ? { bootstrapCI } : {}),
+      ...(trajectoryData ? { trajectoryData } : {}),
+      ...(modelPerf ? { modelPerformance: modelPerf } : {}),
+    };
+  });
+}
+
 async function startServer() {
   const upload = multer({ storage: multer.memoryStorage() });
 
