@@ -163,6 +163,55 @@ export interface PatientData {
 
   // AI Shock Team Handoff Summary
   aiClinicalSummary?: string;
+
+  // ML Decision Support (pre-computed from static JSON)
+  bootstrapCI?: PatientBootstrapCI;
+  trajectoryData?: TrajectoryData;
+  modelPerformance?: PatientModelPerformance;
+}
+
+// NEW: Bootstrap confidence intervals (from decision_support_bootstrap.json)
+export interface BootstrapTargetCI {
+  prediction_mean: number;
+  ci_lower: number | null;
+  ci_upper: number | null;
+}
+
+export interface PatientBootstrapCI {
+  survival: BootstrapTargetCI;
+  escalation: BootstrapTargetCI;
+  rv_dysfunction: BootstrapTargetCI;
+}
+
+export interface TrajectoryData {
+  cluster_id: number | null;
+  cluster_name: string | null;
+  matches: number;
+  n_valid: number;
+  delta_cpo_mean: number | null;
+  delta_cpo_ci_lower: number | null;
+  delta_cpo_ci_upper: number | null;
+  delta_papi_mean: number | null;
+  delta_papi_ci_lower: number | null;
+  delta_papi_ci_upper: number | null;
+  delta_lactate_mean: number | null;
+  delta_lactate_ci_lower: number | null;
+  delta_lactate_ci_upper: number | null;
+  escalation_rate: number | null;
+  survival_rate: number | null;
+}
+
+export interface ModelPerformanceMetrics {
+  global_auc_mean: number;
+  global_auc_ci_lower: number;
+  global_auc_ci_upper: number;
+  n_bootstrap: number;
+}
+
+export interface PatientModelPerformance {
+  survival: ModelPerformanceMetrics;
+  escalation: ModelPerformanceMetrics;
+  rv_dysfunction: ModelPerformanceMetrics;
 }
 
 export interface ClusterAssignment {
