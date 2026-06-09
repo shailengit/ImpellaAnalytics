@@ -20,13 +20,12 @@ import MortalityFeaturesPage from "./components/MortalityFeaturesPage";
 import EffectivenessDashboard from "./components/EffectivenessDashboard";
 import DashboardPage from "./components/DashboardPage";
 import ActivePatientMonitor from "./components/ActivePatientMonitor";
-import DecisionSupportPage from "./components/DecisionSupportPage";
 
 export default function App() {
   const [data, setData] = useState<AnalyticsResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "mortality" | "effectiveness" | "decision">("dashboard");
+  const [activePage, setActivePage] = useState<"dashboard" | "clusters" | "pvloop" | "mortality" | "effectiveness">("dashboard");
   const [selectedPatient, setSelectedPatient] = useState<PatientData | null>(null);
   const [useLLM, setUseLLM] = useState(() => localStorage.getItem("useLLM") !== "false");
 
@@ -78,17 +77,6 @@ export default function App() {
         </div>
         
         <div className="flex gap-4">
-          <button
-            onClick={() => setActivePage("decision")}
-            className={cn(
-              "px-4 py-2 rounded-sm transition-all flex items-center gap-2 text-sm font-medium border",
-              activePage === "decision"
-                ? "bg-cyan-600 text-white border-cyan-600"
-                : "border-dark-border hover:bg-dark-accent"
-            )}
-          >
-            <Activity size={16} className={activePage === "decision" ? "text-cyan-200" : "text-cyan-400"} />            Decision Support
-          </button>
           <button
             onClick={() => setActivePage("pvloop")}
             className={cn(
@@ -216,16 +204,6 @@ export default function App() {
                   <ArrowLeft size={16} /> Back to Dashboard
                 </button>
                 <EffectivenessDashboard />
-              </div>
-            ) : activePage === "decision" ? (
-              <div className="space-y-6">
-                <button
-                  onClick={() => setActivePage("dashboard")}
-                  className="flex items-center gap-2 text-sm font-medium text-dark-text-muted hover:text-dark-text-primary transition-colors"
-                >
-                  <ArrowLeft size={16} /> Back to Dashboard
-                </button>
-                <DecisionSupportPage />
               </div>
             ) : activePage === "dashboard" ? (
               <DashboardPage
