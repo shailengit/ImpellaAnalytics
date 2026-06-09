@@ -619,7 +619,11 @@ async function startServer() {
       },
     ];
 
-    let enhancedPatients = checkEscalationAlerts(samplePatients);
+    // Load and attach pre-computed decision support data (Phase 1)
+    const { bootstrap, trajectory } = loadDecisionSupportData();
+    let enhancedPatients = attachDecisionSupportData(samplePatients, bootstrap, trajectory);
+
+    enhancedPatients = checkEscalationAlerts(enhancedPatients);
     const mlResult = await runPythonPredictions(enhancedPatients);
     enhancedPatients = mlResult.patients.map(calculateChecklistAndDrivers);
     const predictions = trainAndPredict(enhancedPatients);
@@ -651,6 +655,10 @@ async function startServer() {
               "No valid patient data found in the Excel file. please ensure metrics are in rows and patients in columns.",
           });
       }
+      // Load and attach pre-computed decision support data (Phase 1)
+      const { bootstrap, trajectory } = loadDecisionSupportData();
+      patients = attachDecisionSupportData(patients, bootstrap, trajectory);
+
       patients = checkEscalationAlerts(patients);
       const mlResult = await runPythonPredictions(patients);
       patients = mlResult.patients.map(calculateChecklistAndDrivers);
