@@ -56,9 +56,10 @@ function ciWidth(low: number | null | undefined, high: number | null | undefined
 
 export interface PatientDecisionSupportProps {
   patient: PatientData;
+  cohort?: PatientData[];
 }
 
-export default function PatientDecisionSupport({ patient }: PatientDecisionSupportProps) {
+export default function PatientDecisionSupport({ patient, cohort }: PatientDecisionSupportProps) {
   const [showGuide, setShowGuide] = useState(false);
   const [trajectoryMetric, setTrajectoryMetric] = useState<TrajectoryMetricKey>("cpo");
   const [trajectoryGroup, setTrajectoryGroup] = useState<ComparisonGroup>("all");
@@ -105,36 +106,66 @@ export default function PatientDecisionSupport({ patient }: PatientDecisionSuppo
 
     if (meanVal == null) return [];
 
-    // For "cluster" group we don't have a true peer-average in the single-patient type,
-    // so we show a placeholder zero-bar with "N/A" semantics when group=cluster.
-    // When group=all, we also show only this patient (there are no peers in this per-patient view).
-    // The spec wants patient vs peer group; since this is a single patient component,
-    // we show this patient and, if cluster data exists, a peer-cluster mean placeholder.
-    const hasCluster = trajectoryData.cluster_id != null;
-
     const rows: { name: string; delta: number; ciLow: number; ciHigh: number }[] = [
       {
         name: "This Patient",
         delta: meanVal,
-        ciLow: lowVal ?? 0,
-        ciHigh: highVal ?? 0,
+        ciLow: lowVal ?? meanVal,
+        ciHigh: highVal ?? meanVal,
       },
     ];
 
-    if (trajectoryGroup === "cluster" && hasCluster) {
-      // Peer mean: we only have the single patient's trajectoryData here.
-      // Show a placeholder that indicates no aggregate peer data is available in this component.
-      // However, if we assume delta_*_mean is already the peer mean for the matched group,
-      // we can show the same value duplicated with a different label. To avoid confusion,
-      // we instead show a note. Simpler approach: just show this patient bar.
-      // We'll add the peer bar only if there is a distinct peer mean stored elsewhere.
-      // Since the type only carries per-patient matched means, keep it to one bar.
-    } else if (trajectoryGroup === "all") {
-      // Same limitation — no global peer mean in single-patient type.
+    // Compute peer group average from cohort
+    if (cohort && cohort.length > 0) {
+      let peers = cohort;
+
+      if (trajectoryGroup === "cluster" && trajectoryData.cluster_id != null) {
+        peers = cohort.filter(
+          (p) =>
+            p.id !== patient.id &&
+            p.trajectoryData?.cluster_id === trajectoryData.cluster_id
+        );
+      } else {
+        peers = cohort.filter((p) => p.id !== patient.id);
+      }
+
+      const peerMeans = peers
+        .map((p) => (p.trajectoryData ? (p.trajectoryData[mf.mean] as number | null) : null))
+        .filter((v): v is number => v != null);
+
+      const peerLow = peers
+        .map((p) => (p.trajectoryData ? (p.trajectoryData[mf.low] as number | null) : null))
+        .filter((v): v is number => v != null);
+
+      const peerHigh = peers
+        .map((p) => (p.trajectoryData ? (p.trajectoryData[mf.high] as number | null) : null))
+        .filter((v): v is number => v != null);
+
+      if (peerMeans.length > 0) {
+        const avgDelta = peerMeans.reduce((s, v) => s + v, 0) / peerMeans.length;
+        const avgLow = peerLow.length > 0
+          ? peerLow.reduce((s, v) => s + v, 0) / peerLow.length
+          : avgDelta;
+        const avgHigh = peerHigh.length > 0
+          ? peerHigh.reduce((s, v) => s + v, 0) / peerHigh.length
+          : avgDelta;
+
+        const groupLabel =
+          trajectoryGroup === "cluster" && trajectoryData.cluster_name
+            ? `${trajectoryData.cluster_name} (n=${peerMeans.length})`
+            : `All Patients (n=${peerMeans.length})`;
+
+        rows.push({
+          name: groupLabel,
+          delta: avgDelta,
+          ciLow: avgLow,
+          ciHigh: avgHigh,
+        });
+      }
     }
 
     return rows;
-  }, [trajectoryData, trajectoryMetric, trajectoryGroup, mf]);
+  }, [trajectoryData, trajectoryMetric, trajectoryGroup, mf, cohort, patient.id]);
 
   /* ── Render ── */
   return (
@@ -545,6 +576,16 @@ export default function PatientDecisionSupport({ patient }: PatientDecisionSuppo
             {trajectoryData.escalation_rate != null && (
               <>
                 {" "}Of those matches, {(trajectoryData.escalation_rate * 100).toFixed(0)}% required escalation.
+              </>
+            )}
+            {chartData.length > 1 && chartData[1] && (
+              <>
+                {" "}Compared to {chartData[1].name.split(" (")[0].toLowerCase()}, this patient is{" "}
+                {Math.abs(chartData[0].delta - chartData[1].delta) < 0.05
+                  ? "near the group average."
+                  : chartData[0].delta > chartData[1].delta
+                  ? `above average (+${(chartData[0].delta - chartData[1].delta).toFixed(2)}).`
+                  : `below average (${(chartData[0].delta - chartData[1].delta).toFixed(2)}).`}
               </>
             )}
           </div>

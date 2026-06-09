@@ -156,6 +156,7 @@ export default function App() {
             patient={selectedPatient}
             onBack={() => setSelectedPatient(null)}
             useLLM={useLLM}
+            cohort={data?.patients || []}
           />
         ) : (
           <>

@@ -30,9 +30,10 @@ interface ActivePatientMonitorProps {
   patient: PatientData;
   onBack: () => void;
   useLLM: boolean;
+  cohort?: PatientData[];
 }
 
-export default function ActivePatientMonitor({ patient: initialPatient, onBack, useLLM }: ActivePatientMonitorProps) {
+export default function ActivePatientMonitor({ patient: initialPatient, onBack, useLLM, cohort }: ActivePatientMonitorProps) {
   const [patient, setPatient] = useState<PatientData>(initialPatient);
   const [originalPatient] = useState<PatientData>(initialPatient);
   
@@ -690,7 +691,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
       </div>
 
       {/* Section 3.5: Decision Support (merged from DecisionSupportPage) */}
-      <PatientDecisionSupport patient={patient} />
+      <PatientDecisionSupport patient={patient} cohort={cohort} />
 
       {/* Section 4: Longitudinal Hemodynamic Trajectories (Sparkline cards) */}
       <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl">
