@@ -539,5 +539,5 @@ export function checkEscalationAlerts(patients: PatientData[]) {
 }
 
 export function runPythonPredictions(patients: PatientData[]): Promise<{ patients: PatientData[]; clusterResults: Record<string, any> }> {
-  return Promise.resolve(predictFromJsModels(patients));
+  return Promise.resolve(predictFromJsModels(patients) as any);
 }

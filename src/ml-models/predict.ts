@@ -6,7 +6,7 @@ import weights from "./model-weights.json";
 
 interface PatientInput {
   id: string;
-  name?: string;
+  name: string;
   age?: number;
   weightKg?: number;
   heightCm?: number;
@@ -14,7 +14,7 @@ interface PatientInput {
   race?: number;
   causeOfShock?: number;
   scai?: string | number;
-  daysBetweenRhcAndImpella?: number;
+  daysBetweenRhcAndImpella: number;
   preRA?: number; postRA?: number;
   preRVSP?: number; postRVSP?: number;
   preRVDP?: number; postRVDP?: number;
@@ -455,7 +455,7 @@ export function predictFromJsModels(patients: PatientInput[]): PredictionResult 
         )
       : predictLogisticRegression(
           features, featureNames,
-          w.rv_dysfunction.coef, w.rv_dysfunction.intercept,
+          (w.rv_dysfunction as any).coef, (w.rv_dysfunction as any).intercept,
           scalerMean, scalerScale, imputerStats,
         );
 
