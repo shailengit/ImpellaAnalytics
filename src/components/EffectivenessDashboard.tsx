@@ -8,6 +8,7 @@ import {
 import { TrendingUp, Activity, AlertTriangle, BarChart3, FlaskConical, Users, Heart, Brain, Info, ArrowLeft } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion } from "motion/react";
+import InfoTip from "./InfoTip";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,7 +141,7 @@ function SurvivalSection({ data }: { data: IndicationStat[] }) {
     <div className="bg-dark-card border border-dark-border p-6 rounded-xl shadow-2xl">
       <h3 className="font-semibold text-lg mb-6 flex items-center gap-2">
         <TrendingUp size={18} className="text-purple-400" />
-        Survival by Indication
+        Survival by Indication <InfoTip>This chart shows survival outcomes broken down by the reason Impella was implanted (e.g., AMI cardiogenic shock, acute decompensated heart failure). Each bar shows survived (green) vs. expired (red). The numbers below show the mortality rate for each indication group.</InfoTip>
       </h3>
       {chartData.length > 0 ? (
         <div className="h-[300px]">
@@ -219,7 +220,7 @@ function HemodynamicSection({ data, outcomeFilter }: { data: EffectivenessData["
       <div className="flex justify-between items-center mb-6">
         <h3 className="font-semibold text-lg flex items-center gap-2">
           <Activity size={18} className="text-blue-400" />
-          Hemodynamic Response
+          Hemodynamic Response <InfoTip>Shows how key hemodynamic measurements changed from pre- to post-Impella, split by survived vs. expired patients. Green bars = survivors, red = non-survivors. Positive delta means improvement. Click different metrics (CPO, MAP, PAPI etc.) to compare. The scatter plot on the right plots CPO change against cardiac output change.</InfoTip>
         </h3>
         <div className="flex gap-2 flex-wrap">
           {metrics.slice(0, 6).map(m => (
@@ -310,7 +311,7 @@ function LabSection({ data, outcomeFilter }: { data: EffectivenessData["labs"]; 
     <div className="bg-dark-card border border-dark-border p-6 rounded-xl shadow-2xl">
       <h3 className="font-semibold text-lg mb-6 flex items-center gap-2">
         <FlaskConical size={18} className="text-emerald-400" />
-        Lab Recovery (Mean Delta)
+        Lab Recovery (Mean Delta) <InfoTip>Shows the average change in lab values from pre- to post-Impella, split by survived (green) vs. expired (red). Positive means the lab value increased after support, negative means it decreased. For lactate and liver enzymes, decreasing is usually good. Below the chart, statistically significant differences are highlighted.</InfoTip>
       </h3>
       {chartData.length > 0 ? (
         <div className="h-[300px]">
@@ -369,7 +370,7 @@ function ResponderSection({ data }: { data: EffectivenessData["responders"] }) {
     <div className="bg-dark-card border border-dark-border p-6 rounded-xl shadow-2xl">
       <h3 className="font-semibold text-lg mb-6 flex items-center gap-2">
         <Users size={18} className="text-amber-400" />
-        Responder Profiling
+        Responder Profiling <InfoTip>Identifies which clinical measurements best distinguish patients who responded well to Impella (CPO improved + lactate dropped + survived) from those who did not. The radar chart compares the profiles of responders vs. non-responders. "Key Differentiators" lists the measurements most different between the two groups, ranked by statistical significance.</InfoTip>
       </h3>
       <div className="mb-4 grid grid-cols-3 gap-4">
         <div className="bg-dark-accent rounded-lg p-4 text-center">
@@ -447,7 +448,7 @@ function VentricularSection({ data }: { data: EffectivenessData["ventricularMech
     <div className="bg-dark-card border border-dark-border p-6 rounded-xl shadow-2xl">
       <h3 className="font-semibold text-lg mb-6 flex items-center gap-2">
         <Heart size={18} className="text-pink-400" />
-        Ventricular Mechanics (PV Loop)
+        Ventricular Mechanics (PV Loop) <InfoTip>Compares heart-pump mechanics between survived and expired patients using PV loop data. Measurements include Ees (heart contractility), Ea (arterial load), and Ees/Ea ratio (coupling). Higher Ees/Ea = better heart-vessel matching. Smaller bars suggest that specific measurement was lower in non-survivors.</InfoTip>
       </h3>
       {chartData.length > 0 ? (
         <div className="h-[300px]">
@@ -493,7 +494,7 @@ function MLCrossReferenceSection({ data }: { data: EffectivenessData["mlCrossRef
     <div className="bg-dark-card border border-dark-border p-6 rounded-xl shadow-2xl">
       <h3 className="font-semibold text-lg mb-6 flex items-center gap-2">
         <Brain size={18} className="text-orange-400" />
-        ML Model Cross-Reference
+        ML Model Cross-Reference <InfoTip>Shows which clinical features are most important across all three ML models (mortality, escalation, RV dysfunction) combined. Features with higher consensus scores are more influential across multiple models. The description column explains what each feature measures and why it matters clinically.</InfoTip>
       </h3>
       {barData.length > 0 ? (
         <>

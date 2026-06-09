@@ -28,9 +28,9 @@ The dev and production servers are the same Express app (`server.ts`). In develo
 1. **Upload / Sample**: The React frontend (`src/App.tsx`) uploads an `.xlsx` file to `POST /api/analyze` or loads hardcoded sample data from `GET /api/sample`.
 2. **Excel Parsing**: `server.ts:processExcelData()` reads the Excel buffer with `xlsx`. The expected layout is **one patient per column**, with metric labels in column 0. It parses all sections: general demographics, pre-implant RHC, 48h post-implant RHC, echo pre/post, labs pre/post, inotropes, diuretics, Impella settings, outcomes, and PV loop data.
 3. **ML Prediction**: The server calls `scripts/predict_all.py` via `execFile` (using `PYTHON_PATH` env var) with the full patient data as JSON on stdin. The Python script loads trained scikit-learn models from `ml_output/*.joblib` and returns three risk probabilities:
-   - `survival` — mortality risk (RandomForest, AUC ~0.52, limited utility)
-   - `escalation` — MCS escalation risk (RandomForest, AUC ~0.86)
-   - `rvDysfunction` — RV dysfunction risk (LogisticRegression, AUC ~0.92)
+   - `survival` — mortality risk (RandomForest, AUC ~0.89, clinically useful)
+   - `escalation` — MCS escalation risk (RandomForest, AUC ~0.95)
+   - `rvDysfunction` — RV dysfunction risk (LogisticRegression, AUC ~0.94)
 4. **Derived Metrics**: The server also computes `deltaCPO`, `recoveryScore`, and traditional risk flags (`postRA > 20` or `postPAPI < 1.0`).
 5. **Knowledge Base Alerts**: `server.ts:checkEscalationAlerts()` matches the patient's `eesEa` against `impella_knowledge_base.json` within a 15% tolerance; if any historical match was escalated, it sets `escalationAlert: true`.
 6. **Visualization**: The frontend renders a dark-themed dashboard with summary cards, cohort risk meters, a Recharts bar chart for delta CPO, a scatter plot for risk distribution, and a patient detail modal with hemodynamic trends and ML risk scores.
@@ -53,11 +53,12 @@ The dev and production servers are the same Express app (`server.ts`). In develo
 
 ### Environment Variables
 
-- `GEMINI_API_KEY` — Required for GoogleGenAI initialization (not actively used in main endpoints).
 - `PYTHON_PATH` — Path to the Python executable with `pandas`, `scikit-learn`, `joblib`, `openpyxl` installed. Defaults to `python3`.
 - `APP_URL` — Hosting URL (injected by AI Studio at runtime).
+- `OLLAMA_BASE_URL` — Ollama server URL. Defaults to `http://localhost:11434`.
+- `OLLAMA_MODEL` — Ollama model for clinical summaries. Defaults to `deepseek-v4-flash:cloud`.
 
-Create a `.env.local` file with these values for local development.
+Create a `.env` file with these values for local development.
 
 ## Tech Stack
 

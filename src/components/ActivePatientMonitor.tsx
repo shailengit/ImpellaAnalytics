@@ -23,6 +23,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import type { PatientData } from "../types";
 import RiskMeter from "./RiskMeter";
+import InfoTip from "./InfoTip";
 
 interface ActivePatientMonitorProps {
   patient: PatientData;
@@ -39,14 +40,24 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
   const [simFlow, setSimFlow] = useState(initialPatient.impellaFlow);
   const [simPLevel, setSimPLevel] = useState(initialPatient.performanceLevel);
   const [simVIS, setSimVIS] = useState(
-    initialPatient.postVIS !== undefined 
-      ? initialPatient.postVIS 
+    initialPatient.postVIS !== undefined
+      ? initialPatient.postVIS
       : (initialPatient.visScore !== undefined ? initialPatient.visScore : 0)
   );
   const [simLactate, setSimLactate] = useState(initialPatient.postLactate !== undefined ? initialPatient.postLactate : 1.5);
   const [simRA, setSimRA] = useState(initialPatient.postRA);
   const [simPAPI, setSimPAPI] = useState(initialPatient.postPAPI);
   const [simCPO, setSimCPO] = useState(initialPatient.postCPO);
+
+  // Whether user has modified any slider from baseline
+  const hasSimulatorChanges =
+    simFlow !== initialPatient.impellaFlow ||
+    simPLevel !== initialPatient.performanceLevel ||
+    (simVIS !== (initialPatient.postVIS ?? initialPatient.visScore ?? 0)) ||
+    simLactate !== (initialPatient.postLactate ?? 1.5) ||
+    simRA !== initialPatient.postRA ||
+    simPAPI !== initialPatient.postPAPI ||
+    simCPO !== initialPatient.postCPO;
 
   // AI Handoff Memo State
   const [aiMemo, setAiMemo] = useState<{ impression: string; hemodynamics: string; risk: string; management: string } | null>(null);
@@ -256,13 +267,14 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
             {/* Weaning Checklist */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl space-y-4">
               <h3 className="font-semibold text-sm uppercase tracking-widest text-emerald-400 flex items-center gap-2">
-                <CheckCircle2 size={16} /> Weaning Readiness Assessment
+                <CheckCircle2 size={16} /> Weaning Readiness Assessment <InfoTip>Five bedside criteria to assess if the patient is ready to wean off Impella. Each criterion is scored continuously (not just pass/fail) and weighted by clinical importance. The final score is reduced if ML models predict high mortality, escalation, or RV failure risk — preventing a misleading "perfect score."</InfoTip>
               </h3>
               <div className="space-y-3.5 pt-2">
                 {patient.checklistResults?.weaningCriteria.map((item, index) => (
                   <div key={index} className="flex justify-between items-center border-b border-dark-border/40 pb-2 text-sm">
                     <span className="text-dark-text-secondary">{item.label}</span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-dark-text-muted w-5 text-right">{item.score}</span>
                       <span className="text-xs font-mono font-bold text-dark-text-muted pr-1">{item.value}</span>
                       <span className={cn(
                         "px-2 py-0.5 rounded-sm text-[9px] font-mono font-bold tracking-widest uppercase",
@@ -274,16 +286,24 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
                   </div>
                 ))}
               </div>
-              <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3 text-xs leading-relaxed text-dark-text-secondary flex gap-2 items-start mt-2">
-                <Clock size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                <p>Weaning requires at least 4 out of 5 criteria to pass. Always down-titrate Impella flow gradually under direct ICU waveform observation.</p>
+              <div className="bg-dark-accent/40 border border-dark-border rounded-lg p-3 text-[11px] leading-relaxed text-dark-text-secondary space-y-1">
+                <div className="flex items-start gap-2">
+                  <Clock size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <p>Each criterion scored continuously (max 100). Score ≥ 60 indicates weaning readiness. Always down-titrate gradually under direct ICU observation.</p>
+                </div>
+                {patient.riskScores && (
+                  <div className="flex items-start gap-2">
+                    <Zap size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                    <p>Risk-adjusted: ML-predicted risks automatically reduce the weaning score to prevent paradoxes (mortality &gt;50%, escalation &gt;30%, or RV failure &gt;30%).</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Escalation Warnings */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl space-y-4">
               <h3 className="font-semibold text-sm uppercase tracking-widest text-red-400 flex items-center gap-2">
-                <AlertOctagon size={16} className="animate-pulse" /> Escalation Danger Flags
+                <AlertOctagon size={16} className="animate-pulse" /> Escalation Danger Flags <InfoTip>Warnings triggered when post-implant measurements cross critical thresholds. RA &gt; 20 mmHg suggests RV congestion. PAPI &lt; 1.0 indicates severe RV dysfunction. AST &gt; 200 suggests liver congestion. Lactate &gt; 3.0 means ongoing tissue oxygen deficit. Any triggered flag warrants increased surveillance and possible escalation planning.</InfoTip>
               </h3>
               <div className="space-y-3.5 pt-2">
                 {patient.checklistResults?.escalationCriteria.map((item, index) => (
@@ -310,7 +330,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
 
           {/* Section 2: What-If Treatment Simulator */}
           <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-xl"></div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-xl pointer-events-none"></div>
             <div className="flex justify-between items-center border-b border-dark-border/60 pb-4">
               <div>
                 <h3 className="font-semibold text-base flex items-center gap-2">
@@ -330,7 +350,12 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
                 <button
                   onClick={handleSimulate}
                   disabled={isSimulating}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold font-mono tracking-widest shadow-lg shadow-blue-900/20 transition-all uppercase disabled:opacity-50"
+                  className={cn(
+                    "flex items-center gap-1.5 px-4 py-1.5 rounded-md text-white text-xs font-bold font-mono tracking-widest uppercase duration-100 disabled:opacity-50",
+                    hasSimulatorChanges && !isSimulating
+                      ? "bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/30"
+                      : "bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20"
+                  )}
                 >
                   {isSimulating ? "Recalculating..." : "Run Simulator"}
                 </button>
@@ -455,7 +480,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center justify-between p-3 bg-dark-card border border-dark-border/40 rounded-lg">
-                    <span className="text-xs font-mono text-dark-text-secondary">Survival Risk</span>
+                    <span className="text-xs font-mono text-dark-text-secondary">Mortality Risk</span>
                     <span className="text-lg font-mono font-bold text-red-400">
                       {Math.round((patient.riskScores.survival ?? 0) * 100)}%
                     </span>
@@ -473,6 +498,23 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
                     </span>
                   </div>
                 </div>
+                <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 mt-3">
+                  <p className="text-[11px] leading-relaxed text-dark-text-secondary">
+                    <span className="text-amber-400 font-bold">&#9432; How to read these scores:</span> These are three independent models predicting different clinical endpoints, so they can diverge (e.g., high mortality with low escalation).
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-dark-text-secondary mt-1.5">
+                    <span className="text-orange-400 font-bold">Escalation risk</span> — Very reliable (AUC 0.95). 100% of high-risk flags truly required escalation, but the model misses ~85% of actual escalations. A low score does not rule out risk — use alongside clinical criteria.
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-dark-text-secondary mt-1.5">
+                    <span className="text-amber-400 font-bold">RV failure risk</span> — Reliable (AUC 0.94). Detects 65% of patients with RV dysfunction and 93% of flagged patients truly develop it. A low score reduces but does not eliminate the possibility.
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-dark-text-secondary mt-1.5">
+                    <span className="text-red-400 font-bold">Mortality risk</span> — Now clinically useful (AUC 0.89). Correctly identifies 56% of patients who will die and rules out 88% of survivors. About half of patients flagged as high-risk will actually die. Use alongside clinical judgment — a low score is reassuring but not a guarantee.
+                  </p>
+                  <p className="text-[10px] leading-relaxed text-dark-text-muted mt-2 italic">
+                    Confidence estimates based on internal 5-fold cross-validation (n=128). Performance may differ on new patient populations. External validation is pending.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -484,7 +526,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
           {/* Explainable AI Risk Drivers */}
           <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl space-y-4">
             <h3 className="font-semibold text-sm uppercase tracking-widest text-blue-400 flex items-center gap-2">
-              <Brain size={16} /> Explainable AI (Bedside Drivers)
+              <Brain size={16} /> Explainable AI (Bedside Drivers) <InfoTip>Shows the specific clinical measurements that most influenced each ML risk score for this patient. A positive impact (red) means the measurement increased the risk prediction. Negative impact (green) means it decreased risk. This helps clinicians understand why the model gave a particular score — not just the score itself.</InfoTip>
             </h3>
             <p className="text-[10px] text-dark-text-muted font-mono leading-relaxed">
               Top specific clinical parameters driving risk predictions for this patient:
@@ -538,7 +580,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
             {/* Header */}
             <div className="p-6 pb-0 flex items-center justify-between">
               <h3 className={cn("font-semibold text-sm uppercase tracking-widest flex items-center gap-2", useLLM ? "text-purple-400" : "text-dark-text-muted")}>
-                <Sparkles size={16} /> Clinical Huddle Memo
+                <Sparkles size={16} /> Clinical Huddle Memo <InfoTip>AI-generated clinical summary for this patient. When AI is ON, it uses a local Ollama model (deepseek-v4-flash) to write a structured narrative with clinical impression, hemodynamic spotlight, risk assessment, and management plan. When AI is OFF, a deterministic template is used instead based on the checklist results.</InfoTip>
               </h3>
               <span className={cn(
                 "text-[9px] font-mono uppercase tracking-widest border px-2 py-0.5 rounded-sm font-bold",
@@ -649,7 +691,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
       {/* Section 4: Longitudinal Hemodynamic Trajectories (Sparkline cards) */}
       <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl">
         <h3 className="font-semibold text-sm uppercase tracking-widest mb-6 flex items-center gap-2 text-white">
-          <Heart size={16} className="text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]" /> Longitudinal Telemetry Trajectories (Pre vs 48h Post)
+          <Heart size={16} className="text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]" /> Longitudinal Telemetry Trajectories (Pre vs 48h Post) <InfoTip>Side-by-side comparison of key measurements before (pre) and 48 hours after (post) Impella implantation. Green arrows = improving, red = declining, gray = stable. The Delta_CPO entry at the bottom shows the overall hemodynamic trend — the single most important indicator of recovery.</InfoTip>
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">

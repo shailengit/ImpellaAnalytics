@@ -30,7 +30,7 @@ from sklearn.metrics import (
     roc_auc_score, confusion_matrix, roc_curve
 )
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 import joblib
 
@@ -211,7 +211,7 @@ def load_patient_data(path: Path) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     numeric_keys = [k for k in PATIENT_DATA_ROWS.keys() if k not in (
-        "general_notes", "first_name", "last_name", "mrn", "date_of_implant"
+        "general_notes", "first_name", "last_name", "mrn", "date_of_implant", "outcome"
     )]
     for k in numeric_keys:
         df[k] = pd.to_numeric(df[k], errors="coerce")
@@ -245,7 +245,13 @@ def load_cohort(path: Path) -> pd.DataFrame:
 def build_targets(df: pd.DataFrame) -> pd.DataFrame:
     """Create three prediction targets."""
     # 1. Survival: 1 = expired, 0 = survived
-    df["target_survival"] = (df["cohort_outcome"].str.lower() == "expired").astype(int)
+    # Use Patient Data sheet outcome (row 141) as authoritative source:
+    #   4 / "4" / "4.0" / "3 and 4" / "and 4" = expired, contains "exp"/"die" = expired
+    #   All other values (3, 2, 1, NaN, etc.) = survived
+    outcome_raw = df["outcome"].fillna("").astype(str).str.strip().str.lower()
+    outcome_is_expired = outcome_raw.str.contains(r"\band 4\b|^4\.?0?$|^4$", regex=True, na=False)
+    outcome_is_expired |= outcome_raw.str.contains("exp|die", regex=True, na=False)
+    df["target_survival"] = outcome_is_expired.astype(int)
 
     # 2. MCS Escalation: 1 = ECMO/LVAD/Transplant/Arrest after impella
     notes = df["general_notes"].fillna("").str.lower()
@@ -367,12 +373,42 @@ def evaluate_model(model, X: pd.DataFrame, y: pd.Series, cv: StratifiedKFold) ->
     }
 
 
+# Per-target model configurations based on sandbox experiments
+TARGET_CONFIGS = {
+    "survival": {
+        "L1 LogisticRegression": LogisticRegression(
+            max_iter=2000, random_state=RANDOM_STATE, class_weight="balanced",
+            penalty="l1", solver="saga",
+        ),
+        "L2 LogisticRegression": LogisticRegression(
+            max_iter=2000, random_state=RANDOM_STATE, class_weight="balanced",
+        ),
+    },
+    "escalation": {
+        "RandomForest": RandomForestClassifier(
+            n_estimators=200, max_depth=6, random_state=RANDOM_STATE, class_weight="balanced",
+        ),
+        "GradientBoosting": GradientBoostingClassifier(
+            n_estimators=200, max_depth=2, learning_rate=0.1, random_state=RANDOM_STATE,
+        ),
+    },
+    "rv_dysfunction": {
+        "GradientBoosting": GradientBoostingClassifier(
+            n_estimators=200, max_depth=2, learning_rate=0.1, random_state=RANDOM_STATE,
+        ),
+        "L2 LogisticRegression": LogisticRegression(
+            max_iter=2000, random_state=RANDOM_STATE, class_weight="balanced",
+        ),
+    },
+}
+
+
 def train_all_models(X: pd.DataFrame, y: pd.Series, target_name: str) -> dict:
     cv = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=RANDOM_STATE)
-    models = {
+    models = TARGET_CONFIGS.get(target_name, {
         "LogisticRegression": LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, class_weight="balanced"),
         "RandomForest": RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_STATE, class_weight="balanced"),
-    }
+    })
     results = {}
     for name, model in models.items():
         print(f"  Training {name} ...")
@@ -586,7 +622,8 @@ def main():
                "physician", "rhc_prior_72h", "rhc_timing_days", "support_days",
                "target_survival", "target_escalation", "target_rv_dysfunction",
                "pre_septal_flattening", "pre_atrial_bowing",
-               "post_septal_flattening", "post_atrial_bowing"}
+               "post_septal_flattening", "post_atrial_bowing",
+               "outcome"}
     feature_cols = [c for c in df.columns if c not in exclude and pd.api.types.is_numeric_dtype(df[c])]
     print(f"  Using {len(feature_cols)} numeric features")
 
@@ -624,9 +661,12 @@ def main():
         print(f"  Best model: {best_name}")
 
         best_clf = {
-            "LogisticRegression": LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, class_weight="balanced"),
-            "RandomForest": RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_STATE, class_weight="balanced"),
-        }[best_name]
+                "L1 LogisticRegression": LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, class_weight="balanced", penalty="l1", solver="saga"),
+                "L2 LogisticRegression": LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, class_weight="balanced"),
+                "RandomForest": RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_STATE, class_weight="balanced"),
+                "GradientBoosting": GradientBoostingClassifier(n_estimators=200, max_depth=2, learning_rate=0.1, random_state=RANDOM_STATE),
+                "LogisticRegression": LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, class_weight="balanced"),
+            }[best_name]
         best_clf.fit(X, y)
 
         plot_roc_curves(results, target_name, OUTPUT_DIR)

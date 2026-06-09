@@ -4,6 +4,7 @@ import { cn } from "@/src/lib/utils";
 import { Info, AlertTriangle, ShieldCheck } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import type { ClusterProfile, ClusterQuality } from "../types";
+import InfoTip from "./InfoTip";
 
 interface ClusterProfilesResponse {
   profiles: Record<string, ClusterProfile>;
@@ -242,7 +243,7 @@ export default function ClusteringPage() {
         {/* PCA Scatter */}
         <div className="bg-dark-card border border-dark-border rounded-xl p-6">
           <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full" /> Patient Clusters (PCA)
+            <div className="w-2 h-2 bg-blue-500 rounded-full" /> Patient Clusters (PCA) <InfoTip>This plot shows how patients group into clusters based on their clinical measurements. Each dot is a patient, and the colors represent different patient subtypes (phenotypes). Patients that appear close together have similar clinical profiles. This helps identify natural patterns in how patients respond to Impella support.</InfoTip>
           </h3>
           <img
             src="/ml_output/clusters/pca_scatter.png"
@@ -255,7 +256,7 @@ export default function ClusteringPage() {
         {/* Outcome Rates */}
         <div className="bg-dark-card border border-dark-border rounded-xl p-6">
           <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full" /> Outcome Rates by Cluster
+            <div className="w-2 h-2 bg-orange-500 rounded-full" /> Outcome Rates by Cluster <InfoTip>This chart shows how each patient cluster performed in terms of key outcomes: survival, escalation needs, and renal failure. Compare across clusters to see which patient subtypes had better or worse outcomes. For example, one cluster may have high survival but also high escalation needs.</InfoTip>
           </h3>
           <img
             src="/ml_output/clusters/outcome_rates.png"
@@ -281,7 +282,7 @@ export default function ClusteringPage() {
         {/* Consensus Matrix */}
         <div className="bg-dark-card border border-dark-border rounded-xl p-6">
           <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <div className="w-2 h-2 bg-purple-500 rounded-full" /> Consensus Matrix
+            <div className="w-2 h-2 bg-purple-500 rounded-full" /> Consensus Matrix <InfoTip>This matrix shows how consistently patients were grouped together across multiple runs of the clustering algorithm. Darker squares mean patients were frequently placed in the same cluster — indicating a more reliable grouping. Lighter areas suggest the cluster boundary is less stable.</InfoTip>
           </h3>
           <img
             src="/ml_output/clusters/consensus_matrix.png"

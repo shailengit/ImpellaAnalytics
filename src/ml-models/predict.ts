@@ -96,7 +96,7 @@ interface PredictionResult {
 
 /** Median-fill imputation: replace null/undefined with pre-computed median. */
 function impute(row: number[], medians: number[]): number[] {
-  return row.map((v, i) => (v === null || v === undefined || Number.isNaN(v) ? medians[i] : v));
+  return row.map((v, i) => (v === null || v === undefined || Number.isNaN(v) || !isFinite(v) ? medians[i] : v));
 }
 
 /** Z-score standardization. */
@@ -113,13 +113,13 @@ function sigmoid(x: number): number {
 // Feature engineering (matches predict_all.py:engineer_risk_features)
 // ---------------------------------------------------------------------------
 
-function safeDiff(pre: number | undefined, post: number | undefined): number | null {
-  if (pre === undefined || post === undefined) return null;
+function safeDiff(pre: number | undefined | null, post: number | undefined | null): number | null {
+  if (pre == null || post == null) return null;
   return post - pre;
 }
 
-function safeRatio(pre: number | undefined, post: number | undefined): number | null {
-  if (pre === undefined || post === undefined || pre === 0) return null;
+function safeRatio(pre: number | undefined | null, post: number | undefined | null): number | null {
+  if (pre == null || post == null || pre === 0) return null;
   return post / pre;
 }
 
@@ -239,7 +239,7 @@ function engineerFeatures(p: PatientInput): Record<string, number | null> {
   f["race_numeric"] = f["race"] !== null ? Number(f["race"]) : null;
 
   // outcome field if supported
-  f["outcome"] = p.survived !== undefined ? (p.survived ? 1 : 0) : null;
+  f["outcome"] = null;
 
   // Fields from model_metadata.json not yet mapped
   f["Unnamed: 6"] = null;
@@ -281,6 +281,10 @@ function predictLogisticRegression(
 // Random Forest Predictor
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Tree-based model helpers
+// ---------------------------------------------------------------------------
+
 interface Tree {
   children_left: number[];
   children_right: number[];
@@ -289,13 +293,13 @@ interface Tree {
   value: number[][][];
 }
 
-function predictTree(features: number[], tree: Tree): number {
+function predictTree(features: number[], tree: Tree, outputIdx = 1): number {
   let node = 0;
   while (tree.children_left[node] !== -1) {
     const featVal = features[tree.feature[node]] ?? 0;
     node = featVal <= tree.threshold[node] ? tree.children_left[node] : tree.children_right[node];
   }
-  return tree.value[node][0][1];
+  return tree.value[node][0][outputIdx];
 }
 
 function predictRandomForest(
@@ -404,6 +408,26 @@ function assignCluster(p: PatientInput): ClusterResult | null {
 }
 
 // ---------------------------------------------------------------------------
+// Gradient Boosting Predictor
+// ---------------------------------------------------------------------------
+
+function predictGradientBoosting(
+  rowFeatures: Record<string, number | null>,
+  featureNames: string[],
+  gbData: { trees: Tree[]; learning_rate: number; init_constant: number },
+  scalerMean: number[],
+  scalerScale: number[],
+  imputerStats: number[],
+): number {
+  const raw = featureNames.map((name) => (rowFeatures[name] !== undefined ? rowFeatures[name] : null) ?? null);
+  const imp = impute(raw as number[], imputerStats);
+  const scl = standardize(imp, scalerMean, scalerScale);
+  // GB binary classification: sigmoid(init_log_odds + lr * sum of tree values)
+  const rawSum = gbData.trees.reduce((sum, tree) => sum + predictTree(scl, tree, 0), 0);
+  return sigmoid(gbData.init_constant + gbData.learning_rate * rawSum);
+}
+
+// ---------------------------------------------------------------------------
 // Main prediction function (replaces runPythonPredictions)
 // ---------------------------------------------------------------------------
 
@@ -423,11 +447,17 @@ export function predictFromJsModels(patients: PatientInput[]): PredictionResult 
       scalerMean, scalerScale, imputerStats,
     );
 
-    const rvDysfunction = predictLogisticRegression(
-      features, featureNames,
-      w.rv_dysfunction.coef, w.rv_dysfunction.intercept,
-      scalerMean, scalerScale, imputerStats,
-    );
+    const rvDysfunction = w.rv_dysfunction.type === "gradient_boosting"
+      ? predictGradientBoosting(
+          features, featureNames,
+          w.rv_dysfunction as unknown as { trees: Tree[]; learning_rate: number; init_constant: number },
+          scalerMean, scalerScale, imputerStats,
+        )
+      : predictLogisticRegression(
+          features, featureNames,
+          w.rv_dysfunction.coef, w.rv_dysfunction.intercept,
+          scalerMean, scalerScale, imputerStats,
+        );
 
     const escalation = predictRandomForest(
       features, featureNames,

@@ -58,7 +58,7 @@ from ml_pipeline import load_patient_data, load_cohort, build_targets, engineer_
 
 def train_pv_loop_model(df: pd.DataFrame) -> dict:
     """Train PV-loop-only logistic regression for escalation."""
-    pv_cols = ["ees", "ea", "ees_ea", "esp", "edp", "pmax"]
+    pv_cols = ["ees_ea", "esp", "edp", "pmax"]
     available = [c for c in pv_cols if c in df.columns]
 
     df_model = df[available + ["target_escalation"]].dropna()
@@ -154,7 +154,6 @@ def generate_pv_loop_scatter(df: pd.DataFrame):
         feature_names = artifact["feature_names"]
 
         medians = df[feature_names].median().to_dict()
-        ea_median = medians["ea"]
 
         # Build a grid of Ees/Ea values that extends well beyond the data so the
         # sigmoid tails (p -> 0 and p -> 1) are visible.
@@ -171,9 +170,6 @@ def generate_pv_loop_scatter(df: pd.DataFrame):
         for val in x_range:
             row = dict(medians)
             row["ees_ea"] = val
-            # Keep Ees, Ea, and Ees/Ea physically consistent: Ees = Ees/Ea * Ea
-            row["ees"] = val * ea_median
-            row["ea"] = ea_median
             grid_rows.append(row)
 
         grid_df = pd.DataFrame(grid_rows, columns=feature_names)

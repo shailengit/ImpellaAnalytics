@@ -2,5 +2,5 @@
   "name": "Impella Hemodynamic Analytics",
   "description": "Clinical analytics platform for predicting recovery and survivability in patients with Impella support, featuring change-point detection and risk indicators.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

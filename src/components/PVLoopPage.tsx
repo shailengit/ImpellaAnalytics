@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { cn } from "@/src/lib/utils";
+import InfoTip from "./InfoTip";
 
 interface PVLoopAnalysis {
   auc: number;
@@ -49,12 +50,12 @@ interface PVLoopPageProps {
 }
 
 function computeDerivedPV(m: Partial<{ ees: number; ea: number; esp: number; edp: number; pmax: number }>) {
-  const ees = m.ees ?? 0.5;
-  const ea = m.ea ?? 0.3;
+  const ees = m.ees;
+  const ea = m.ea;
   const esp = m.esp ?? 150;
   const edp = m.edp ?? 15;
   const pmax = m.pmax ?? esp;
-  const eesEa = ees > 0 ? ees / ea : 0;
+  const eesEa = (ees != null && ea != null && ea > 0) ? ees / ea : undefined;
   return { ees, ea, esp, edp, pmax, eesEa };
 }
 
@@ -101,10 +102,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
 
   const pvData = useMemo(() => {
     return patientList
-      .filter(p => {
-        const m = computeDerivedPV(p);
-        return m.eesEa > 0;
-      })
+      .filter(p => p.ees != null && p.ea != null && p.ea > 0)
       .map(p => {
         const m = computeDerivedPV(p);
         const zone = getEesEaZone(m.eesEa);
@@ -146,7 +144,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
           Pressure-Volume <span className="font-bold">Loop Analysis</span>
         </h1>
         <p className="text-xs font-mono text-dark-text-muted mt-1 uppercase tracking-widest">
-          Ees/Ea coupling, SHAP explainability & hemodynamic response
+          Ees/Ea ratio &bull; 4-feature Logistic Regression &bull; SHAP explainability
         </p>
       </div>
 
@@ -217,7 +215,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
           {pvChartData.length > 0 && (
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Ees/Ea Ratio by Patient
+                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Ees/Ea Ratio by Patient <InfoTip>Ees/Ea is the ratio of heart contractility (Ees) to arterial afterload (Ea). It tells you how well the heart is coupled to the circulatory system. A ratio around 1.0 is normal. Lower means the heart is struggling against the load it has to pump against — a sign of ventricular-arterial uncoupling. Green = good coupling, red = poor coupling.</InfoTip>
               </h3>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -250,6 +248,9 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              <div className="mt-2 text-[10px] font-mono text-dark-text-muted">
+                Showing {pvData.length} of {patientList.length} patients with available Ees/Ea measurements. Patients without PV loop data are excluded.
+              </div>
             </div>
           )}
 
@@ -257,7 +258,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
           {pvModelData && Object.keys(pvModelData.coefficients).length > 0 && (
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Logistic Regression Coefficients
+                <div className="w-2 h-2 bg-blue-500 rounded-full" /> Logistic Regression Coefficients <InfoTip>These bars show which clinical measurements most strongly predict whether a patient will need escalation (ECMO/LVAD). Bars pointing right = higher risk, left = lower risk. Bigger bar = more influential. Red = pushes risk up, green = pushes risk down.</InfoTip>
               </h3>
               <div className="space-y-3">
                 {Object.entries(pvModelData.coefficients).map(([feat, coef]) => {
@@ -293,7 +294,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full" /> Ees/Ea vs MCS Escalation
+                <div className="w-2 h-2 bg-emerald-500 rounded-full" /> Ees/Ea vs MCS Escalation <InfoTip>This scatter plot shows the relationship between Ees/Ea ratio (heart-vessel coupling) and whether a patient required escalation. Generally, patients with lower Ees/Ea (worse coupling) were more likely to need ECMO/LVAD support.</InfoTip>
               </h3>
               <img
                 src="/ml_output/pv_loop_scatter.png"
@@ -304,7 +305,7 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
             </div>
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full" /> SHAP Feature Importance
+                <div className="w-2 h-2 bg-orange-500 rounded-full" /> SHAP Feature Importance <InfoTip>SHAP values explain which measurements most influenced the escalation risk model's predictions. Features at the top were the most important. Longer bars = bigger impact on the model's decision. This helps you understand why a patient was flagged as high-risk.</InfoTip>
               </h3>
               <img
                 src="/ml_output/shap_escalation_full.png"

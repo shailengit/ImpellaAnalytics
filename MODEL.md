@@ -10,9 +10,9 @@ Three binary classification models were trained on a merged dataset of 128 patie
 
 ### 1. Survival Prediction
 - **Target:** Whether the patient expired during the hospitalization.
-- **Best Model:** RandomForest (AUC = 0.54)
-- **Status:** **Not clinically useful.** The model barely discriminates between survivors and non-survivors. This is likely because survival in this cohort is driven by factors not fully captured in the pre-implant RHC data (e.g., refractory arrhythmia, multi-organ failure).
-- **Dashboard Display:** Shown as a red risk meter. Values should be interpreted with extreme caution.
+- **Best Model:** RandomForest (AUC = 0.89)
+- **Status:** **Clinically useful.** After label correction, the model shows meaningful discrimination between survivors and non-survivors. It correctly flags 56% of patients who will die and 88% of survivors are correctly classified as low-risk.
+- **Dashboard Display:** Shown as a red risk meter.
 
 ### 2. MCS Escalation Prediction
 - **Target:** Whether the patient required ECMO, LVAD, transplant, or had a post-implant arrest.
@@ -28,7 +28,7 @@ Three binary classification models were trained on a merged dataset of 128 patie
   - Post-implant RV S' < 9.5 cm/s
   - RV-CPO drop > 30% from pre to post
   - Explicit mention of "RV failure" or "RV dysfunction" in clinical notes
-- **Best Model:** Logistic Regression (AUC = 0.91)
+- **Best Model:** Logistic Regression (AUC = 0.94)
 - **Status:** **Clinically useful.** Good discrimination for RV dysfunction risk.
 - **Dashboard Display:** Shown as an amber risk meter. Scores > 0.3 warrant heightened monitoring.
 

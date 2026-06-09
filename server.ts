@@ -3,7 +3,6 @@ import express from "express";
 import path from "path";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import { GoogleGenAI } from "@google/genai";
 import * as ss from "simple-statistics";
 import * as fs from "fs";
 import { PatientData, processExcelData, trainAndPredict, checkEscalationAlerts, runPythonPredictions } from "./src/excel-parser";
@@ -12,37 +11,54 @@ import { predictFromJsModels } from "./src/ml-models/predict";
 const app = express();
 const PORT = 2956;
 
-// Clinical Gemini client is initialized dynamically inside generateClinicalSummary on-demand.
+// Clinical summary uses local Ollama (deepseek-v4-flash) — no cloud LLM dependency.
 
 // Clinical Decision Support Checklist & Driver Calculator
 function calculateChecklistAndDrivers(p: PatientData): PatientData {
-  // 1. Weaning Criteria
+  // 1. Weaning Criteria — continuous scoring weighted by clinical importance + ML risk adjustment
+  const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
+
   const cpoVal = p.postCPO ?? 0;
-  const cpoPassed = cpoVal >= 0.6;
-  
-  const lactateVal = p.postLactate !== undefined ? p.postLactate : 1.5; 
-  const lactatePassed = lactateVal < 2.0;
-  
+  const lactateVal = p.postLactate !== undefined ? p.postLactate : 1.5;
   const visVal = p.postVIS !== undefined ? p.postVIS : (p.visScore !== undefined ? p.visScore : 0);
-  const visPassed = visVal < 10;
-  
   const papiVal = p.postPAPI ?? 1.0;
-  const papiPassed = papiVal >= 1.5;
-  
   const intubationVal = !!p.intubation;
+
+  // Continuous sub-scores (each weighted by clinical importance):
+  //   CPO 0-30 pts: proportion of 0.6 W threshold
+  const cpoScore = clamp(0, 30, (cpoVal / 0.6) * 30);
+  //   PAPI 0-25 pts: proportion of 1.5 threshold
+  const papiScore = clamp(0, 25, (papiVal / 1.5) * 25);
+  //   Lactate 0-15 pts: inverted — lower lactate = higher score
+  const lactateScore = clamp(0, 15, 15 - (lactateVal / 2.0) * 15);
+  //   VIS 0-15 pts: inverted — lower VIS = higher score
+  const visScore = clamp(0, 15, 15 - (visVal / 10) * 15);
+  //   Extubated 0-15 pts: binary
+  const intubationScore = intubationVal ? 0 : 15;
+
+  // ML risk penalty (prevents paradox: high mortality risk should lower weaning score)
+  const mortalityPenalty = (p.riskScores?.survival ?? 0) > 0.5 ? 20 : 0;
+  const escalationPenalty = (p.riskScores?.escalation ?? 0) > 0.3 ? 15 : 0;
+  const rvPenalty = (p.riskScores?.rvDysfunction ?? 0) > 0.3 ? 10 : 0;
+  const riskPenalty = Math.min(mortalityPenalty + escalationPenalty + rvPenalty, 25);
+
+  const baseScore = cpoScore + papiScore + lactateScore + visScore + intubationScore;
+  const weaningScore = Math.round(clamp(0, 100, baseScore - riskPenalty));
+  const weaningPassed = weaningScore >= 60;
+
+  const cpoPassed = cpoVal >= 0.6;
+  const lactatePassed = lactateVal < 2.0;
+  const visPassed = visVal < 10;
+  const papiPassed = papiVal >= 1.5;
   const intubationPassed = !intubationVal;
 
   const weaningCriteria = [
-    { label: "Cardiac Power Output (CPO)", passed: cpoPassed, value: `${cpoVal.toFixed(2)} W`, threshold: "≥ 0.60 W" },
-    { label: "Serum Lactate (Perfusion)", passed: lactatePassed, value: p.postLactate !== undefined ? `${p.postLactate.toFixed(1)} mmol/L` : "N/A", threshold: "< 2.0 mmol/L" },
-    { label: "Vasopressor Burden (VIS)", passed: visPassed, value: String(visVal), threshold: "< 10" },
-    { label: "RV Pulsatility Index (PAPI)", passed: papiPassed, value: papiVal.toFixed(2), threshold: "≥ 1.50" },
-    { label: "Spontaneous Breathing (Extubated)", passed: intubationPassed, value: intubationVal ? "Intubated" : "Extubated", threshold: "Extubated" }
+    { label: "Cardiac Power Output (CPO)", passed: cpoPassed, value: `${cpoVal.toFixed(2)} W`, threshold: "≥ 0.60 W", score: Math.round(cpoScore) },
+    { label: "Serum Lactate (Perfusion)", passed: lactatePassed, value: p.postLactate !== undefined ? `${p.postLactate.toFixed(1)} mmol/L` : "N/A", threshold: "< 2.0 mmol/L", score: Math.round(lactateScore) },
+    { label: "Vasopressor Burden (VIS)", passed: visPassed, value: String(visVal), threshold: "< 10", score: Math.round(visScore) },
+    { label: "RV Pulsatility Index (PAPI)", passed: papiPassed, value: papiVal.toFixed(2), threshold: "≥ 1.50", score: Math.round(papiScore) },
+    { label: "Spontaneous Breathing (Extubated)", passed: intubationPassed, value: intubationVal ? "Intubated" : "Extubated", threshold: "Extubated", score: intubationScore }
   ];
-
-  const weaningPassedCount = weaningCriteria.filter(c => c.passed).length;
-  const weaningScore = Math.round((weaningPassedCount / weaningCriteria.length) * 100);
-  const weaningPassed = weaningPassedCount >= 4;
 
   // 2. Escalation Danger Warnings
   const raVal = p.postRA ?? 0;
@@ -131,15 +147,13 @@ function calculateChecklistAndDrivers(p: PatientData): PatientData {
   };
 }
 
-// Generate Clinical Summary — Gemini (primary), Ollama (fallback), or template
+// Generate Clinical Summary — local Ollama (deepseek-v4-flash) or template fallback
 // Returns structured 4-section object for card-based rendering
-async function generateClinicalSummary(patient: PatientData, useGemini: boolean): Promise<{
+async function generateClinicalSummary(patient: PatientData, useLLM: boolean): Promise<{
   impression: string; hemodynamics: string; risk: string; management: string
 }> {
-  const geminiKey = process.env.GEMINI_API_KEY || "";
-  const ollamaKey = process.env.OLLAMA_API_KEY || "";
-  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "https://ollama.com/v1";
-  const ollamaModel = process.env.OLLAMA_MODEL || "glm-5.1";
+  const ollamaModel = process.env.OLLAMA_MODEL || "deepseek-v4-flash:cloud";
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
 
   // Parses an LLM response with labeled sections into the structured object
   const parseLLMResponse = (text: string): {
@@ -195,12 +209,12 @@ async function generateClinicalSummary(patient: PatientData, useGemini: boolean)
     };
   };
 
-  // AI OFF — skip all LLMs, return deterministic template
-  if (!useGemini) {
+  // AI OFF — skip LLM, return deterministic template
+  if (!useLLM) {
     return getFallbackSummary(patient, false);
   }
 
-  // Build the clinical prompt (shared by Gemini and Ollama)
+  // Build the clinical prompt (shared model)
   const clinicalPrompt = `You are an experienced cardiologist on the Shock Team. Based on the patient data below, write a concise clinical analysis in exactly 4 sections. Use the EXACT labels shown. Write clinical JUDGMENT (what the numbers mean and what to do), not a data sheet.
 
 CLINICAL IMPRESSION:
@@ -219,17 +233,13 @@ Renal Failure: ${patient.renalFailure ? "Yes" : "No"}, Intubated: ${patient.intu
 ML Risk Scores (lower = better): Mortality=${patient.riskScores?.survival !== undefined ? (patient.riskScores.survival * 100).toFixed(0) + "%" : "N/A"}, Escalation=${patient.riskScores?.escalation !== undefined ? (patient.riskScores.escalation * 100).toFixed(0) + "%" : "N/A"}, RV Dysfunction=${patient.riskScores?.rvDysfunction !== undefined ? (patient.riskScores.rvDysfunction * 100).toFixed(0) + "%" : "N/A"}
 Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate: ${patient.checklistResults?.weaningPassed ? "Yes" : "No"}`;
 
-  // Helper: call Ollama via native API (properly separates reasoning from content for glm-5.1)
+  // Helper: call Ollama via local API
   const callOllama = async (): Promise<string | null> => {
-    if (!ollamaKey) return null;
     const nativeUrl = ollamaBaseUrl.replace(/\/v1\/?$/, "") + "/api/chat";
     try {
       const response = await fetch(nativeUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${ollamaKey}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: ollamaModel,
           messages: [
@@ -255,24 +265,8 @@ Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate:
 
   let llmText: string | null = null;
 
-  // Try Gemini first (if key is set)
-  if (geminiKey) {
-    try {
-      const aiClient = new GoogleGenAI({ apiKey: geminiKey });
-      const response = await aiClient.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: clinicalPrompt,
-      });
-      if (response.text) llmText = response.text;
-    } catch (err) {
-      console.error("Gemini handoff failed:", err);
-    }
-  }
-
-  // Gemini unavailable/failed — try Ollama
-  if (!llmText) {
-    llmText = await callOllama();
-  }
+  // Call local Ollama
+  llmText = await callOllama();
 
   // Parse LLM output into sections, or fall back to template
   if (llmText) {
@@ -288,7 +282,7 @@ Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate:
     };
   }
 
-  // Both LLMs failed — template with fallback indicator
+  // LLM unavailable — template with fallback indicator
   return getFallbackSummary(patient, true);
 }
 
@@ -647,7 +641,7 @@ async function startServer() {
     }
   });
 
-  // Dynamic Clinical Huddle Summary Endpoint (Gemini or Template)
+  // Dynamic Clinical Huddle Summary Endpoint (Ollama or Template)
   app.post("/api/generate-summary", async (req, res) => {
     try {
       const { patient: patientBody, useLLM } = req.body;
@@ -657,9 +651,9 @@ async function startServer() {
       }
       // Re-calculate checklists & drivers to be robust
       const processed = calculateChecklistAndDrivers(patient);
-      const useGemini = useLLM !== false;
-      const summary = await generateClinicalSummary(processed, useGemini);
-      res.json({ patientId: patient.id, summary, usedLLM: useGemini });
+      const llmEnabled = useLLM !== false;
+      const summary = await generateClinicalSummary(processed, llmEnabled);
+      res.json({ patientId: patient.id, summary, usedLLM: llmEnabled });
     } catch (err) {
       console.error("Failed to generate clinical summary:", err);
       res.status(500).json({ error: "Failed to generate clinical summary" });

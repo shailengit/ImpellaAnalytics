@@ -31,7 +31,7 @@ def export():
     weights = {}
 
     # -----------------------------------------------------------------------
-    # Risk models: survival, rv_dysfunction (LogisticRegression), escalation (RandomForest)
+    # Risk models — dynamically dispatch by model type
     # -----------------------------------------------------------------------
     risk_artifacts = {}
     for target in ["survival", "rv_dysfunction", "escalation"]:
@@ -45,34 +45,58 @@ def export():
     weights["imputer"] = {"statistics_": _to_json(im.statistics_), "strategy": im.strategy}
     weights["feature_names"] = risk_artifacts["survival"]["feature_names"]
 
-    # LogisticRegression models
-    for target in ["survival", "rv_dysfunction"]:
-        a = risk_artifacts[target]
+    for target, a in risk_artifacts.items():
         m = a["model"]
-        weights[target] = {
-            "type": "logistic_regression",
-            "coef": _to_json(m.coef_[0]),
-            "intercept": _to_json(m.intercept_[0]),
-        }
+        model_type = type(m).__name__
 
-    # RandomForest model
-    rf_artifact = risk_artifacts["escalation"]
-    rf_model = rf_artifact["model"]
-    trees = []
-    for est in rf_model.estimators_:
-        t = est.tree_
-        trees.append({
-            "children_left": _to_json(t.children_left),
-            "children_right": _to_json(t.children_right),
-            "feature": _to_json(t.feature),
-            "threshold": _to_json(t.threshold),
-            "value": _to_json(t.value),
-        })
-    weights["escalation"] = {
-        "type": "random_forest",
-        "n_estimators": len(trees),
-        "trees": trees,
-    }
+        if model_type == "LogisticRegression":
+            weights[target] = {
+                "type": "logistic_regression",
+                "coef": _to_json(m.coef_[0]),
+                "intercept": _to_json(m.intercept_[0]),
+            }
+
+        elif model_type == "GradientBoostingClassifier":
+            # GradientBoosting is an ensemble of regression trees
+            trees = []
+            for est_stage in m.estimators_:
+                est = est_stage[0]  # binary classification: 1 estimator per stage
+                t = est.tree_
+                trees.append({
+                    "children_left": _to_json(t.children_left),
+                    "children_right": _to_json(t.children_right),
+                    "feature": _to_json(t.feature),
+                    "threshold": _to_json(t.threshold),
+                    "value": _to_json(t.value),
+                })
+            # Store init log-odds constant (prior prediction before boosting)
+            import numpy as np
+            dummy = np.zeros((1, m.n_features_in_))
+            init_raw = float(m._raw_predict_init(dummy)[0, 0])
+            weights[target] = {
+                "type": "gradient_boosting",
+                "n_estimators": len(trees),
+                "learning_rate": m.learning_rate,
+                "init_constant": init_raw,
+                "trees": trees,
+            }
+
+        elif model_type == "RandomForestClassifier":
+            trees = []
+            for est in m.estimators_:
+                t = est.tree_
+                trees.append({
+                    "children_left": _to_json(t.children_left),
+                    "children_right": _to_json(t.children_right),
+                    "feature": _to_json(t.feature),
+                    "threshold": _to_json(t.threshold),
+                    "value": _to_json(t.value),
+                })
+            weights[target] = {
+                "type": "random_forest",
+                "n_estimators": len(trees),
+                "trees": trees,
+            }
 
     # -----------------------------------------------------------------------
     # Cluster model
@@ -104,9 +128,10 @@ def export():
     OUTPUT.write_text(raw, encoding="utf-8")
     print(f"Exported {len(raw)} bytes to {OUTPUT}")
     print(f"  feature_names: {len(weights['feature_names'])} features")
-    print(f"  survival: LogisticRegression, {len(weights['survival']['coef'])} coefficients")
-    print(f"  rv_dysfunction: LogisticRegression, {len(weights['rv_dysfunction']['coef'])} coefficients")
-    print(f"  escalation: RandomForest, {weights['escalation']['n_estimators']} trees")
+    for target in ["survival", "rv_dysfunction", "escalation"]:
+        w = weights.get(target)
+        if w:
+            print(f"  {target}: {w['type']}, {w.get('n_estimators', len(w.get('coef', [])))} {'trees' if 'trees' in w else 'coefficients'}")
     if "cluster" in weights:
         print(f"  cluster: {len(weights['cluster']['kmeans_centroids'])} centroids")
 

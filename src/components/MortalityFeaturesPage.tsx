@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { Info, TrendingUp, Brain, BarChart3, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
+import InfoTip from "./InfoTip";
 
 interface FeatureRow {
   [key: string]: any;
@@ -95,7 +96,7 @@ export default function MortalityFeaturesPage() {
     return (
       <div className="space-y-8 mt-6">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <BarChart3 size={18} className="text-blue-400" /> Feature Subset Performance
+          <BarChart3 size={18} className="text-blue-400" /> Feature Subset Performance <InfoTip>Shows how model accuracy (AUC) changes when using only the top-ranked features versus all 185+ features. If a shorter feature list achieves similar performance, it means the model can be simplified without losing predictive power. Blue = Logistic Regression, Orange = Random Forest.</InfoTip>
         </h3>
         <p className="text-xs text-dark-text-muted font-mono -mt-4">
           Comparing AUC when using only the top-k consensus features vs. the full feature set (5-fold CV)
@@ -145,7 +146,7 @@ export default function MortalityFeaturesPage() {
           </div>
           <div>
             <h2 className="text-2xl font-light tracking-tight">Mortality <span className="font-bold">Feature Importance</span></h2>
-            <p className="text-[10px] text-dark-text-muted font-mono uppercase tracking-widest mt-1">Multi-Method Consensus Analysis</p>
+            <p className="text-[10px] text-dark-text-muted font-mono uppercase tracking-widest mt-1">Multi-Method Consensus Analysis <InfoTip>This page identifies which clinical measurements are most strongly associated with in-hospital mortality. Five different statistical methods are used, and their results are combined into a consensus ranking. The goal is to understand what signals matter most — not to make individual predictions.</InfoTip></p>
           </div>
         </div>
         <p className="text-sm text-dark-text-secondary leading-relaxed max-w-3xl">
@@ -213,7 +214,7 @@ export default function MortalityFeaturesPage() {
       {/* Features Table */}
       <div className="bg-dark-card border border-dark-border p-6 rounded-lg">
         <h3 className="font-semibold text-lg flex items-center gap-2 mb-4">
-          <Info size={16} className="text-blue-400" /> Consensus Ranking — Full Table
+          <Info size={16} className="text-blue-400" /> Consensus Ranking — Full Table <InfoTip>Each row is a clinical measurement ranked by how consistently it predicts mortality across five different methods. Higher consensus score = more reliable signal. Features like AST (liver injury), lactate (tissue perfusion), and age consistently rank at the top.</InfoTip>
         </h3>
         <div className="overflow-x-auto custom-scrollbar-h">
           <table className="w-full text-xs">
@@ -259,7 +260,7 @@ export default function MortalityFeaturesPage() {
       {comparison && (
         <div className="bg-dark-card border border-dark-border p-6 rounded-lg">
           <h3 className="font-semibold text-lg flex items-center gap-2 mb-2">
-            <BarChart3 size={18} className="text-emerald-400" /> Feature Reduction Analysis
+            <BarChart3 size={18} className="text-emerald-400" /> Feature Reduction Analysis <InfoTip>Compares model performance using the full feature set versus reduced subsets. This helps determine if a simpler model (fewer measurements needed) can achieve similar accuracy. For escalation and RV dysfunction, the full model significantly outperforms reduced versions.</InfoTip>
           </h3>
           <p className="text-xs text-dark-text-muted font-mono mb-6">
             How model performance changes when using only the top-k consensus features vs. the full feature set
@@ -327,7 +328,7 @@ export default function MortalityFeaturesPage() {
               <h4 className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Model Performance Summary</h4>
               <p className="text-dark-text-secondary mb-2">
                 The <strong>escalation</strong> model achieves the best performance (RF AUC up to {comparison ? (comparison.escalation?.full?.RF_AUC * 100).toFixed(1) : "—"}%),
-                while <strong>survival</strong> prediction remains challenging (AUC ~58%).
+                while <strong>survival</strong> prediction is now clinically useful (LR AUC up to {comparison ? (comparison.survival?.full?.LR_AUC * 100).toFixed(1) : "89"}%).
               </p>
               <p className="text-dark-text-secondary">
                 For escalation and RV dysfunction, the <strong>full feature set</strong> significantly outperforms reduced subsets

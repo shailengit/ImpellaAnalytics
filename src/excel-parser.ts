@@ -151,7 +151,7 @@ export interface PatientData {
     weaningScore: number;       // Composite weaning index (0-100)
     weaningPassed: boolean;
     escalationWarning: boolean;
-    weaningCriteria: { label: string; passed: boolean; value: string; threshold: string }[];
+    weaningCriteria: { label: string; passed: boolean; value: string; threshold: string; score: number; }[];
     escalationCriteria: { label: string; triggered: boolean; value: string; threshold: string }[];
   };
 

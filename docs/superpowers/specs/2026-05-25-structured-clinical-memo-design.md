@@ -93,7 +93,7 @@ Same structure as template mode, with a section-level note: "LLM unavailable —
 
 1. Start dev server, load sample data, open a patient
 2. AI OFF: verify 4 template cards render with deterministic content
-3. AI ON (Gemini/Ollama): verify 4 LLM-filled cards render with clinical judgment text
+3. AI ON (Ollama/deepseek-v4-flash): verify 4 LLM-filled cards render with clinical judgment text
 4. Verify card colors match: purple, green, amber, blue
 5. Verify text is readable at 13px on dark background
 6. Toggle AI ON/OFF — verify seamless transition between LLM and template

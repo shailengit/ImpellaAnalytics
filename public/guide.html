@@ -294,7 +294,7 @@
   </div>
 
   <h3>Feature Engineering</h3>
-  <p>For every patient the pipeline derives <strong>185+ numeric features</strong>:</p>
+  <p>For every patient the pipeline derives <strong>184 numeric features</strong> (178 used after dropping all-NaN columns):</p>
   <div class="card">
     <ul class="checklist">
       <li>Delta values (<code>post − pre</code>) for all RHC, echo, and lab metrics</li>
@@ -313,7 +313,7 @@
 <section id="models">
   <h2>3. Machine-Learning Models</h2>
 
-  <p>Three binary classifiers were trained with <strong>5-fold stratified cross-validation</strong> (seed 42). The best-performing model per target was exported as a <code>.joblib</code> artifact and is called at runtime by the Node.js server.</p>
+  <p>Three binary classifiers were trained with <strong>5-fold stratified cross-validation</strong> (seed 42). The best-performing model per target was exported as a JSON weight file via the export script and loaded by the JavaScript inference engine at runtime.</p>
 
   <div class="card">
     <table>
@@ -327,22 +327,22 @@
       <tr>
         <td>Survival</td>
         <td>Expired during hospitalization</td>
-        <td>RandomForest</td>
-        <td>0.52</td>
-        <td><span class="badge badge-danger">Not useful</span></td>
+        <td>L1 LogisticRegression (Lasso)</td>
+        <td>0.89</td>
+        <td><span class="badge badge-success">Clinically useful</span></td>
       </tr>
       <tr>
         <td>MCS Escalation</td>
         <td>ECMO, LVAD, transplant, or post-implant arrest</td>
         <td>RandomForest</td>
-        <td>0.86</td>
-        <td><span class="badge badge-success">Clinically useful</span></td>
+        <td>0.95</td>
+        <td><span class="badge badge-success">Highly useful</span></td>
       </tr>
       <tr>
         <td>RV Dysfunction</td>
         <td>Composite: post PAPI &lt;1.0, RA &gt;20, TAPSE &lt;1.6, RV S′ &lt;9.5, RV-CPO drop &gt;30%, or explicit RV failure note</td>
-        <td>Logistic Regression</td>
-        <td>0.92</td>
+        <td>GradientBoosting</td>
+        <td>0.94</td>
         <td><span class="badge badge-success">Highly useful</span></td>
       </tr>
     </table>
@@ -352,7 +352,7 @@
   <p>SHAP summary plots are generated during training and saved to <code>ml_output/shap_*.png</code>. They show which variables push an individual prediction up or down, making the models auditable at the bedside.</p>
 
   <h3>Integration</h3>
-  <p>The Node.js server spawns <code>predict.py</code> via <code>execFile</code>, passing the full patient payload as JSON on <code>stdin</code>. The script loads the joblib artifacts and returns three risk probabilities as JSON on <code>stdout</code>. If Python is unavailable, the server gracefully degrades and returns the raw patient data without risk scores.</p>
+  <p>Model weights are exported to <code>src/ml-models/model-weights.json</code> by <code>export_model_weights.py</code> after training. The <strong>JavaScript inference engine</strong> (<code>predict.ts</code>) loads the weights directly, engineers features from the patient data, and computes risk probabilities — all within the Node.js server without spawning a Python subprocess. This makes predictions fast, reliable, and deployable anywhere Node.js runs. If the weights file is missing, the server gracefully degrades and returns the raw patient data without risk scores.</p>
 </section>
 
 <section id="phenotypes">
@@ -481,8 +481,9 @@
   <p>Open the patient detail modal. Pay attention to:</p>
   <div class="card">
     <ul class="checklist">
-      <li><strong>RV Dysfunction probability</strong> — the most reliable model (AUC 0.92)</li>
-      <li><strong>MCS Escalation probability</strong> — strong discriminator (AUC 0.86)</li>
+      <li><strong>Mortality Risk</strong> — AUC 0.89 — good clinical utility</li>
+      <li><strong>RV Dysfunction probability</strong> — the most reliable model (AUC 0.94)</li>
+      <li><strong>MCS Escalation probability</strong> — strong discriminator (AUC 0.95)</li>
       <li><strong>Knowledge-Base Alert</strong> — historical pattern match on Ees/Ea</li>
       <li><strong>Echo trends</strong> — TAPSE, RV S′, TR severity changes</li>
       <li><strong>Lab trajectory</strong> — creatinine, lactate, pH direction</li>
@@ -526,9 +527,9 @@
 
   <h3>Model-Specific Notes</h3>
   <div class="card">
-    <p><span class="badge badge-danger">Survival (AUC 0.52)</span> &mdash; Barely better than chance. <strong>Do not use for clinical decision-making.</strong> Mortality in this cohort is likely driven by factors not fully captured in pre-implant RHC data (refractory arrhythmia, multi-organ failure).</p>
-    <p><span class="badge badge-success">MCS Escalation (AUC 0.86)</span> &mdash; Strong discriminator. Driven by pre-implant hemodynamics, VIS score, inotrope burden, and SCAI stage. Useful for early identification of patients who may need ECMO or durable LVAD.</p>
-    <p><span class="badge badge-success">RV Dysfunction (AUC 0.92)</span> &mdash; Excellent discrimination. Driven by pre-implant RHC, echo metrics, and PV-loop mechanics. Scores &gt;0.3 warrant heightened RV surveillance.</p>
+    <p><span class="badge badge-success">Survival (AUC 0.89)</span> &mdash; Good discriminator. Correctly identifies 56% of patients who will die and correctly rules out 88% of patients who survive. At the default threshold, ~50% of patients flagged as high-risk will actually die (positive predictive value). Use alongside clinical judgment — the model captures pre-implant physiology but cannot anticipate acute events like arrhythmias or sepsis.</p>
+    <p><span class="badge badge-success">MCS Escalation (AUC 0.95)</span> &mdash; Excellent discriminator. Driven by pre-implant hemodynamics, VIS score, inotrope burden, and SCAI stage. At its default threshold, 100% of patients flagged as high-risk truly required escalation — meaning if the model says "high escalation risk," it is highly reliable. It does miss some escalations (sensitivity 15%), so a low score does not guarantee safety.</p>
+    <p><span class="badge badge-success">RV Dysfunction (AUC 0.94)</span> &mdash; Excellent discrimination. Driven by pre-implant RHC, echo metrics, and PV-loop mechanics. Correctly detects 65% of patients who will develop RV dysfunction, and 93% of patients flagged as high-risk truly develop it. Scores &gt;0.3 warrant heightened RV surveillance.</p>
   </div>
 
   <h3>What Each Number Means &mdash; In Plain Language</h3>
@@ -536,15 +537,15 @@
   <div class="card">
     <h4 style="margin-top:0;color:var(--danger)">Mortality Risk (Survival)</h4>
     <p><strong>What it is:</strong> The model looks at pre-implant data (RHC, echo, labs, demographics) and estimates the probability that a patient will die during this hospitalization.</p>
-    <p><strong>What it is NOT:</strong> It does <strong>not</strong> predict whether the Impella device is working. It does <strong>not</strong> predict long-term survival after discharge. It also does <strong>not</strong> capture every possible cause of death. The model has an AUC of only 0.52, which means it is only slightly better than flipping a coin.</p>
-    <p><strong>Why is it so weak?</strong> Death in this cohort is often caused by things the model cannot see from the pre-implant data sheet: sudden refractory arrhythmias (VT/VF), multi-organ failure that develops unpredictably, or sepsis. Those events are not coded into the training data.</p>
+    <p><strong>What it is NOT:</strong> It does <strong>not</strong> predict whether the Impella device is working. It does <strong>not</strong> predict long-term survival after discharge. It also does <strong>not</strong> capture every possible cause of death. The model has an AUC of 0.89, which provides good discrimination and is clinically useful for risk stratification.</p>
+    <p><strong>Why is it good?</strong> The model has an AUC of 0.89 (5-fold cross-validation), meaning it correctly distinguishes expired from survived patients 89% of the time. At its default threshold, it correctly identifies 56% of patients who will die (sensitivity) and correctly rules out 88% of patients who survive (specificity). About half of the patients it flags as high-risk will actually die (precision 50%). The model was retrained using the authoritative Patient Data outcome labels and is now clinically useful for risk stratification.</p>
     <p><strong>How to read the percentage:</strong></p>
     <ul>
-      <li><strong>5% risk</strong> &mdash; The model thinks this patient is relatively stable based on the numbers it can see. <em>This does not guarantee survival.</em> A patient with a 5% score can still die from an arrhythmia the model never saw coming.</li>
-      <li><strong>50% risk</strong> &mdash; The model is essentially guessing. The pre-implant profile is ambiguous; some patients with this profile survived, others did not. Do not act on this score alone.</li>
-      <li><strong>80% risk</strong> &mdash; The model sees several red flags in the pre-implant data. Even so, this number is unreliable. Use clinical judgment, not this meter, to triage care.</li>
+      <li><strong>5% risk</strong> &mdash; The model thinks this patient is at low risk based on the numbers it can see. <em>This does not guarantee survival.</em> A patient with a 5% score can still die from an arrhythmia the model never saw coming, but 88% of patients at this level will survive.</li>
+      <li><strong>50% risk</strong> &mdash; The model is uncertain. The pre-implant profile is ambiguous; some patients with this profile survived, others did not. Escalate monitoring and clinical assessment.</li>
+      <li><strong>80% risk</strong> &mdash; The model sees several red flags in the pre-implant data. About half of patients flagged at this level will die. This warrants a care-team discussion and consideration of escalation planning.</li>
     </ul>
-    <p><strong>Bottom line:</strong> Treat this meter as an experimental research output. If a patient dies with a low score, it is not a bug &mdash; it is a known limitation of the model.</p>
+    <p><strong>Bottom line:</strong> This model is now clinically useful (AUC 0.89). Use it alongside clinical judgment — it correctly identifies 56% of patients who will die and rules out 88% of survivors. A low score is reassuring but not a guarantee.</p>
   </div>
 
   <div class="card">
@@ -563,7 +564,7 @@
       <li><strong>35% risk</strong> &mdash; The model sees concerning patterns: high VIS score, severe SCAI stage D/E, very low pre-implant CPO, high PCWP. This patient is in a gray zone where some patients stabilize on Impella alone and others crash. <strong>Recommended action:</strong> Increase monitoring frequency (e.g., hourly vitals + continuous telemetry), ensure ECMO cannulation supplies are in the room, and give the cardiac surgery team a heads-up.</li>
       <li><strong>70% risk</strong> &mdash; The model predicts a high probability of escalation. The patient likely has refractory cardiogenic shock with poor hemodynamic reserve. <strong>Recommended action:</strong> Alert the attending, place an ECMO-consult early, confirm blood products and cannulation access are available, and consider whether the patient is a LVAD or transplant candidate before they decompensate.</li>
     </ul>
-    <p><strong>Key point:</strong> This model has an AUC of 0.86, which is strong. But it still misses some escalations (false negatives) and over-flags others (false positives). Use it as a triage aid, not an absolute rule.</p>
+    <p><strong>Key point:</strong> This model has an AUC of 0.95, which is excellent. But it still misses some escalations (false negatives) and over-flags others (false positives). Use it as a triage aid, not an absolute rule.</p>
   </div>
 
   <div class="card">
@@ -597,7 +598,7 @@
     <p><strong>Real example &mdash; why high RV risk does not equal death:</strong></p>
     <p>Consider a patient with pre-implant TAPSE of 1.2 cm and TR severity grade 3. The model flags a high RV Dysfunction Risk. After Impella implant, the post-implant echo shows TAPSE actually improved to 2.3 cm and RA pressure dropped to 7 mmHg. The RV tolerated the procedure well despite the high predicted risk. The model warned you to watch closely; the reality was better than predicted. This is exactly how the score should be used: <em>heightened vigilance, not automatic pessimism.</em></p>
 
-    <p><strong>Bottom line:</strong> The RV Dysfunction model (AUC 0.92) is the most reliable of the three. Use it to decide how intensively to monitor the RV after Impella implant, not to decide whether to implant the device in the first place.</p>
+    <p><strong>Bottom line:</strong> The RV Dysfunction model (AUC 0.94) is the most reliable of the three. Use it to decide how intensively to monitor the RV after Impella implant, not to decide whether to implant the device in the first place.</p>
   </div>
 </section>
 
@@ -639,25 +640,25 @@
   <div class="card">
     <h3>Mortality Risk (Cohort Average)</h3>
     <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will not survive to discharge.</p>
-    <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features (pre-implant RHC, echo, labs, demographics, Impella settings). The displayed value is the cohort average of individual patient probabilities.</p>
+    <p><strong>How it's calculated:</strong> An L1 LogisticRegression (Lasso) model trained on 178 features (pre-implant RHC, echo, labs, demographics, Impella settings). The displayed value is the cohort average of individual patient probabilities.</p>
     <p><strong>What it means:</strong> Higher percentage = worse prognosis. A 30% cohort average means that, on average, 3 in 10 patients in this group are predicted to expire. This is a probability, not a guarantee.</p>
-    <p><strong>Limitation:</strong> The survival model has limited predictive power (AUC ~0.54). Mortality is influenced by many unmeasured factors (arrhythmia timing, operator decisions, family goals of care). Do not use this number alone for triage.</p>
+    <p><strong>Performance:</strong> AUC 0.89 (5-fold CV). Correctly identifies 56% of patients who will die (sensitivity) and 88% of patients who survive (specificity). About half of patients flagged as high-risk will die (precision 50%). These metrics are based on internal cross-validation and may differ on an external cohort.</p>
   </div>
 
   <div class="card">
     <h3>Escalation Risk (Cohort Average)</h3>
     <p><strong>What it is:</strong> Machine learning estimate of the probability that a patient will need MCS escalation (ECMO, LVAD, transplant) or will arrest while on Impella.</p>
-    <p><strong>How it's calculated:</strong> A Random Forest model trained on 185+ features. The displayed value is the cohort average of individual patient probabilities.</p>
+    <p><strong>How it's calculated:</strong> A Random Forest model trained on 178 features. The displayed value is the cohort average of individual patient probabilities.</p>
     <p><strong>What it means:</strong> Higher = plan early for ECMO/LVAD readiness, ensure crash cart availability, and consider early consultation with advanced heart failure team.</p>
-    <p><strong>Limitation:</strong> AUC ~0.95 on our data, but this is still "in-sample." On a new hospital's patients, expect AUC to drop to ~0.80&ndash;0.85. Also, escalation is partly a decision, not just a biological event &mdash; some operators escalate earlier than others.</p>
+    <p><strong>Performance:</strong> AUC 0.95 (5-fold CV). 100% of patients flagged as high-risk truly required escalation (precision 100%), but the model misses ~85% of actual escalations (sensitivity 15%). A low score does not rule out risk. Escalation is partly a clinical decision, not purely a biological event — thresholds vary between operators.</p>
   </div>
 
   <div class="card">
     <h3>RV Dysfunction Risk (Cohort Average)</h3>
     <p><strong>What it is:</strong> Machine learning estimate of the probability of right ventricular failure during Impella support.</p>
-    <p><strong>How it's calculated:</strong> A Logistic Regression model trained on 185+ features. Logistic regression is fully interpretable &mdash; each feature has a coefficient you can inspect. The displayed value is the cohort average.</p>
+    <p><strong>How it's calculated:</strong> A GradientBoosting model trained on 178 features. The displayed value is the cohort average of individual patient probabilities.</p>
     <p><strong>What it means:</strong> Higher = watch for rising RA pressure, falling PAPI, echo signs of RV dilation, and increased inotrope requirements. RV failure is the most common cause of Impella failure and MCS escalation.</p>
-    <p><strong>Limitation:</strong> AUC ~0.93 on our data, but RV dysfunction is often a dynamic process. A patient can look fine at 48 hours and decompensate at 72 hours. Use this as a screening flag, not a definitive diagnosis.</p>
+    <p><strong>Performance:</strong> AUC 0.94 (5-fold CV). Correctly detects 65% of patients with RV dysfunction (sensitivity) and 99% of flagged patients truly develop it (precision 93%). RV dysfunction can be dynamic — a patient who looks fine at 48h may decompensate at 72h. Use as a screening flag, not a final diagnosis.</p>
   </div>
 </section>
 
