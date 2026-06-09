@@ -24,6 +24,7 @@ import { cn } from "@/src/lib/utils";
 import type { PatientData } from "../types";
 import RiskMeter from "./RiskMeter";
 import InfoTip from "./InfoTip";
+import PatientDecisionSupport from "./PatientDecisionSupport";
 
 interface ActivePatientMonitorProps {
   patient: PatientData;
@@ -334,7 +335,7 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
             <div className="flex justify-between items-center border-b border-dark-border/60 pb-4">
               <div>
                 <h3 className="font-semibold text-base flex items-center gap-2">
-                  <Sliders size={18} className="text-blue-400" /> Bedside "What-If" Treatment Simulator
+                  <Sliders size={18} className="text-blue-400" /> Bedside "What-If" Treatment Simulator <InfoTip>Virtually adjust parameters and see recalculated ML risks in real time.</InfoTip>
                 </h3>
                 <p className="text-[10px] text-dark-text-muted uppercase font-mono mt-0.5 tracking-wider">
                   Virtually test clinical titrations and observe automated ML risk changes
@@ -687,6 +688,9 @@ export default function ActivePatientMonitor({ patient: initialPatient, onBack, 
         </div>
 
       </div>
+
+      {/* Section 3.5: Decision Support (merged from DecisionSupportPage) */}
+      <PatientDecisionSupport patient={patient} />
 
       {/* Section 4: Longitudinal Hemodynamic Trajectories (Sparkline cards) */}
       <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-2xl">
