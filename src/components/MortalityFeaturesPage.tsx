@@ -37,12 +37,32 @@ export default function MortalityFeaturesPage() {
   }, []);
 
   const top20 = features.slice(0, 20);
+  const totalFeatures = features.length;
 
-  const consensusChartData = top20.map((f, i) => ({
-    name: f[""] || Object.keys(f)[0],
-    score: f.consensus_score,
-    rank: i + 1,
-  })).reverse();
+  const getMethodValue = (f: FeatureRow, method: string): number => {
+    if (method === "consensus_score") return f.consensus_score;
+    // For rank-based methods, invert so higher = better (like a score)
+    const rank = f[method];
+    if (rank !== undefined && typeof rank === "number") return 1 - (rank / totalFeatures);
+    return 0;
+  };
+
+  const getMethodDisplay = (f: FeatureRow, method: string): string => {
+    if (method === "consensus_score") return (f.consensus_score * 100).toFixed(1) + "%";
+    const rank = f[method];
+    if (rank !== undefined && typeof rank === "number") return `#${rank}`;
+    return "—";
+  };
+
+  const consensusChartData = top20
+    .map((f, i) => ({
+      name: f[""] || Object.keys(f)[0],
+      score: getMethodValue(f, sortMethod),
+      rawValue: getMethodDisplay(f, sortMethod),
+      rank: i + 1,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .reverse();
 
   const methodNames = ["RF Gini", "Permutation", "SHAP", "LASSO", "Univariate AUC"];
 
@@ -165,7 +185,7 @@ export default function MortalityFeaturesPage() {
       <div className="bg-dark-card border border-dark-border p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-semibold text-lg flex items-center gap-2">
-            <TrendingUp size={18} className="text-purple-400" /> Top 20 Consensus Features
+            <TrendingUp size={18} className="text-purple-400" /> Top 20 — {sortMethod === "consensus_score" ? "Consensus Score" : sortMethod}
           </h3>
           <div className="flex gap-2">
             {["consensus_score", "RF Gini", "SHAP", "LASSO", "Univariate AUC"].map(m => (
@@ -199,14 +219,15 @@ export default function MortalityFeaturesPage() {
               />
               <Tooltip content={({ active, payload, label }: any) => {
                 if (!active || !payload || payload.length === 0) return null;
+                const valueLabel = sortMethod === "consensus_score" ? "Consensus Score" : `Rank (inverted)`;
                 return (
-                  <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[160px]">
+                  <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[180px]">
                     <div className="text-sm font-semibold text-dark-text-primary mb-2 pb-2 border-b border-dark-border">{label}</div>
                     <div className="space-y-1 text-xs">
                       {payload.map((entry: any, i: number) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="text-dark-text-muted">Consensus Score</span>
-                          <span className="font-mono text-purple-400">{(entry.value * 100).toFixed(1)}%</span>
+                        <div key={i} className="flex justify-between gap-3">
+                          <span className="text-dark-text-muted">{valueLabel}</span>
+                          <span className="font-mono text-purple-400">{entry.payload.rawValue}</span>
                         </div>
                       ))}
                     </div>
