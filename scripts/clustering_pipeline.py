@@ -867,6 +867,21 @@ def export_quality_metrics(silhouette_avg: float, n_clusters: int, n_features: i
     print(f"  Saved quality metrics to {output_path}")
 
 
+def export_pca_coordinates(mrns: list, X_pca: np.ndarray, labels: np.ndarray, output_path: Path):
+    """Save PCA coordinates as JSON for frontend scatter plot."""
+    coords = []
+    for i, mrn in enumerate(mrns):
+        coords.append({
+            "mrn": str(mrn),
+            "pc1": float(X_pca[i, 0]),
+            "pc2": float(X_pca[i, 1]),
+            "cluster": int(labels[i]),
+        })
+    with open(output_path, "w") as f:
+        json.dump(coords, f, indent=2)
+    print(f"  Saved PCA coordinates to {output_path}")
+
+
 def export_model(imputer, scaler, kmeans, centroids, feature_names: list, output_path: Path, pca=None):
     """Save cluster_model.joblib with kmeans object + centroids array + optional PCA."""
     artifact = {
@@ -1133,6 +1148,12 @@ def main():
     X_pca = pca.fit_transform(X_scaled)
     plot_pca_scatter(X_pca, labels, OUTPUT_DIR / "pca_scatter.png",
                      patient_ids=df_good["mrn"].tolist())
+
+    # Export PCA coordinates for frontend
+    export_pca_coordinates(
+        df_good["mrn"].tolist(), X_pca, labels,
+        OUTPUT_DIR / "pca_coordinates.json"
+    )
 
     # Cluster profiles heatmap
     plot_cluster_profiles(profiles, OUTPUT_DIR / "cluster_profiles_heatmap.png")
