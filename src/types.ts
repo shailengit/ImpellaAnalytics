@@ -246,6 +246,13 @@ export interface ClusterQuality {
   clinical_caution: string;
 }
 
+export interface PcaCoordinate {
+  mrn: string;
+  pc1: number;
+  pc2: number;
+  cluster: number;
+}
+
 export interface AnalyticsResult {
   patients: PatientData[];
   summary: {
