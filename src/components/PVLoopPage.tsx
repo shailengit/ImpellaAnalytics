@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from "recharts";
 import { cn } from "@/src/lib/utils";
 import InfoTip from "./InfoTip";
 
@@ -238,7 +238,8 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: "#1A1D24", border: "1px solid #2D3748", borderRadius: "8px", color: "#E2E8F0" }}
-                      itemStyle={{ fontSize: "12px" }}
+                      itemStyle={{ color: "#E2E8F0", fontSize: "12px" }}
+                      labelStyle={{ color: "#E2E8F0", fontWeight: 600 }}
                     />
                     <Bar dataKey="eesEa" radius={[2, 2, 0, 0]}>
                       {pvChartData.map((entry, index) => (
@@ -290,51 +291,188 @@ export default function PVLoopPage({ patients }: PVLoopPageProps) {
             </div>
           )}
 
-          {/* Pre-generated Images */}
+          {/* Interactive Visualizations — Built from SHAP + model data */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Panel 1: Ees/Ea vs Escalation Probability (Scatter) */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full" /> Ees/Ea vs MCS Escalation <InfoTip>This scatter plot shows the relationship between Ees/Ea ratio (heart-vessel coupling) and whether a patient required escalation. Generally, patients with lower Ees/Ea (worse coupling) were more likely to need ECMO/LVAD support.</InfoTip>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full" /> Ees/Ea vs Escalation Risk <InfoTip>Each dot is a patient. X-axis shows Ees/Ea ratio (heart-vessel coupling). Y-axis shows the model-predicted probability of MCS escalation. Green dots = patients who remained stable. Red dots = patients who required ECMO/LVAD escalation. Lower Ees/Ea generally corresponds to higher escalation risk.</InfoTip>
               </h3>
-              <img
-                src="/ml_output/pv_loop_scatter.png"
-                alt="PV Loop Scatter"
-                className="w-full rounded border border-dark-border"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              {(() => {
+                const scatterPoints = shapData?.patient_shap
+                  ?.filter(p => p.ees_ea_value != null)
+                  .map(p => ({
+                    mrn: p.mrn,
+                    name: p.name,
+                    eesEa: p.ees_ea_value!,
+                    escalationProb: p.prediction_probability,
+                    actual: p.actual,
+                  })) || [];
+                return scatterPoints.length > 0 ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
+                        <XAxis type="number" dataKey="eesEa" name="Ees/Ea" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} label={{ value: "Ees/Ea", position: "bottom", fontSize: 10, fill: "#718096" }} domain={[0, 'auto']} />
+                        <YAxis type="number" dataKey="escalationProb" name="Escalation Probability" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} label={{ value: "Escalation Risk", angle: -90, position: "left", fontSize: 10, fill: "#718096" }} domain={[0, 1]} tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`} />
+                        <ZAxis range={[50, 50]} />
+                        <Tooltip content={({ active, payload }: any) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const p = payload[0]?.payload;
+                          if (!p) return null;
+                          return (
+                            <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[180px]">
+                              <div className="text-sm font-semibold text-dark-text-primary mb-2 pb-2 border-b border-dark-border">{p.name}</div>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex justify-between"><span className="text-dark-text-muted">Ees/Ea</span><span className="font-mono text-dark-text-primary">{p.eesEa.toFixed(3)}</span></div>
+                                <div className="flex justify-between"><span className="text-dark-text-muted">Escalation Risk</span><span className="font-mono text-orange-400">{(p.escalationProb * 100).toFixed(1)}%</span></div>
+                                <div className="flex justify-between"><span className="text-dark-text-muted">Outcome</span><span className={cn("font-mono", p.actual === 1 ? "text-red-400" : "text-emerald-400")}>{p.actual === 1 ? "Escalated" : "Stable"}</span></div>
+                              </div>
+                            </div>
+                          );
+                        }} />
+                        <Scatter data={scatterPoints}>
+                          {scatterPoints.map((p, i) => (
+                            <Cell key={i} fill={p.actual === 1 ? "#f87171" : "#34d399"} fillOpacity={0.7} />
+                          ))}
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <img src="/ml_output/shap_escalation_full.png" alt="SHAP Summary" className="w-full rounded border border-dark-border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                );
+              })()}
             </div>
+
+            {/* Panel 2: SHAP Feature Importance (Horizontal Bar) */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full" /> SHAP Feature Importance <InfoTip>SHAP values explain which measurements most influenced the escalation risk model's predictions. Features at the top were the most important. Longer bars = bigger impact on the model's decision. This helps you understand why a patient was flagged as high-risk.</InfoTip>
+                <div className="w-2 h-2 bg-orange-500 rounded-full" /> SHAP Feature Importance <InfoTip>Top clinical features ranked by their impact on the escalation risk model. Longer bars = more influence. Features like prior MCS escalation history, LV size, and hemoglobin change are the strongest signals. Hover for exact SHAP importance values.</InfoTip>
               </h3>
-              <img
-                src="/ml_output/shap_escalation_full.png"
-                alt="SHAP Summary"
-                className="w-full rounded border border-dark-border"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              {(() => {
+                if (!shapData) return null;
+                const topFeatures = Object.entries(shapData.feature_importance)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .slice(0, 12)
+                  .map(([feature, val]) => ({ feature, value: val as number }));
+                return topFeatures.length > 0 ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topFeatures} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 110 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#2D3748" />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="feature" tick={{ fontSize: 10, fill: "#E2E8F0" }} axisLine={false} tickLine={false} width={100} />
+                        <Tooltip content={({ active, payload }: any) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const p = payload[0];
+                          if (!p) return null;
+                          return (
+                            <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[160px]">
+                              <div className="text-xs text-dark-text-muted mb-1">{p.payload.feature}</div>
+                              <div className="font-mono text-dark-text-primary text-sm">{(p.value as number).toFixed(4)}</div>
+                            </div>
+                          );
+                        }} />
+                        <Bar dataKey="value" fill="#f97316" radius={[0, 3, 3, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <img src="/ml_output/shap_escalation_full.png" alt="SHAP Summary" className="w-full rounded border border-dark-border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                );
+              })()}
             </div>
+
+            {/* Panel 3: Ees/Ea SHAP Dependence (Scatter) */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full" /> Ees/Ea SHAP Dependence
+                <div className="w-2 h-2 bg-purple-500 rounded-full" /> Ees/Ea SHAP Dependence <InfoTip>Shows how the SHAP value (impact on escalation risk) changes as Ees/Ea varies. Each dot is a patient. Values above zero (red zone) mean Ees/Ea pushed the model toward predicting escalation. Below zero (green zone) means it pushed toward no escalation. The trend shows higher Ees/Ea = lower escalation risk.</InfoTip>
               </h3>
-              <img
-                src="/ml_output/shap_dependence_ees_ea.png"
-                alt="SHAP Dependence"
-                className="w-full rounded border border-dark-border"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              {(() => {
+                const depPoints = shapData?.patient_shap
+                  ?.filter(p => p.ees_ea_value != null && p.ees_ea_shap != null)
+                  .map(p => ({
+                    mrn: p.mrn,
+                    name: p.name,
+                    eesEa: p.ees_ea_value!,
+                    shapValue: p.ees_ea_shap!,
+                    actual: p.actual,
+                  })) || [];
+                return depPoints.length > 0 ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
+                        <XAxis type="number" dataKey="eesEa" name="Ees/Ea" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} label={{ value: "Ees/Ea", position: "bottom", fontSize: 10, fill: "#718096" }} domain={[0, 'auto']} />
+                        <YAxis type="number" dataKey="shapValue" name="SHAP Value" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} label={{ value: "SHAP Value", angle: -90, position: "left", fontSize: 10, fill: "#718096" }} />
+                        <ZAxis range={[50, 50]} />
+                        <Tooltip content={({ active, payload }: any) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const p = payload[0]?.payload;
+                          if (!p) return null;
+                          return (
+                            <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[180px]">
+                              <div className="text-sm font-semibold text-dark-text-primary mb-2 pb-2 border-b border-dark-border">{p.name}</div>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex justify-between"><span className="text-dark-text-muted">Ees/Ea</span><span className="font-mono text-dark-text-primary">{p.eesEa.toFixed(3)}</span></div>
+                                <div className="flex justify-between"><span className="text-dark-text-muted">SHAP Value</span><span className={cn("font-mono", (p.shapValue as number) >= 0 ? "text-red-400" : "text-emerald-400")}>{(p.shapValue as number).toFixed(4)}</span></div>
+                                <div className="flex justify-between"><span className="text-dark-text-muted">Outcome</span><span className={cn("font-mono", p.actual === 1 ? "text-red-400" : "text-emerald-400")}>{p.actual === 1 ? "Escalated" : "Stable"}</span></div>
+                              </div>
+                            </div>
+                          );
+                        }} />
+                        <Scatter data={depPoints}>
+                          {depPoints.map((p, i) => (
+                            <Cell key={i} fill={p.shapValue >= 0 ? "#f87171" : "#34d399"} fillOpacity={0.7} />
+                          ))}
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <img src="/ml_output/shap_dependence_ees_ea.png" alt="SHAP Dependence" className="w-full rounded border border-dark-border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                );
+              })()}
             </div>
+
+            {/* Panel 4: Coefficient / Odds Ratios (Horizontal Bar) */}
             <div className="bg-dark-card border border-dark-border rounded-xl p-6">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-teal-500 rounded-full" /> PV Loop Coefficients
+                <div className="w-2 h-2 bg-teal-500 rounded-full" /> Top SHAP Features for Escalation <InfoTip>Top 10 features driving escalation risk in this cohort, ranked by SHAP importance. Features like prior MCS escalation, left ventricular dimensions, and hemoglobin trends dominate the model's decisions. Bars with longer reach have more influence on whether a patient is flagged as needing escalation.</InfoTip>
               </h3>
-              <img
-                src="/ml_output/pv_loop_coefficients.png"
-                alt="PV Loop Coefficients"
-                className="w-full rounded border border-dark-border"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              {(() => {
+                if (!shapData) return null;
+                const topFeat = Object.entries(shapData.feature_importance)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .slice(0, 10)
+                  .map(([feature, val]) => ({ feature: feature.replace(/_/g, " "), value: val as number }));
+                return topFeat.length > 0 ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topFeat} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 110 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#2D3748" />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "#718096" }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="feature" tick={{ fontSize: 10, fill: "#E2E8F0" }} axisLine={false} tickLine={false} width={100} />
+                        <Tooltip content={({ active, payload }: any) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const p = payload[0];
+                          if (!p) return null;
+                          return (
+                            <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[160px]">
+                              <div className="text-xs text-dark-text-muted mb-1">{p.payload.feature}</div>
+                              <div className="font-mono text-dark-text-primary text-sm">{(p.value as number).toFixed(4)}</div>
+                            </div>
+                          );
+                        }} />
+                        <Bar dataKey="value" fill="#14b8a6" radius={[0, 3, 3, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-dark-text-muted text-sm">No SHAP data available.</div>
+                );
+              })()}
             </div>
           </div>
         </>
