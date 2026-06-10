@@ -212,6 +212,41 @@ function HemodynamicSection({ data, outcomeFilter }: { data: EffectivenessData["
       };
     });
 
+  // Custom tooltip for the scatter plot
+  const TDCOScatterTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
+    const p = payload[0]?.payload as ScatterPoint | undefined;
+    if (!p) return null;
+    const outcomeColor = p.outcome === "survived" ? SURVIVED_COLOR : EXPIRED_COLOR;
+    return (
+      <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[180px]">
+        <div className="flex items-center justify-between mb-2 pb-2 border-b border-dark-border">
+          <span className="text-sm font-semibold text-dark-text-primary">{p.patientId}</span>
+          <span
+            className="text-[10px] font-bold font-mono uppercase px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: outcomeColor + "20", color: outcomeColor }}
+          >
+            {p.outcome}
+          </span>
+        </div>
+        <div className="space-y-1 text-xs">
+          <div className="flex justify-between">
+            <span className="text-dark-text-muted">Δ CPO</span>
+            <span className={cn("font-mono", p.cpoDelta >= 0 ? "text-emerald-400" : "text-red-400")}>
+              {p.cpoDelta >= 0 ? "+" : ""}{p.cpoDelta.toFixed(3)} W
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-dark-text-muted">Δ TDCO</span>
+            <span className={cn("font-mono", p.tdcoDelta >= 0 ? "text-emerald-400" : "text-red-400")}>
+              {p.tdcoDelta >= 0 ? "+" : ""}{p.tdcoDelta.toFixed(3)} L/min
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Find the test result for selected metric
   const testResult = data.statisticalTests.find(t => t.metric === metric);
 
@@ -276,10 +311,7 @@ function HemodynamicSection({ data, outcomeFilter }: { data: EffectivenessData["
                 <XAxis type="number" dataKey="cpoDelta" name="Δ CPO" tick={{ fontSize: 9, fill: "#718096" }} axisLine={false} tickLine={false} />
                 <YAxis type="number" dataKey="tdcoDelta" name="Δ TDCO" tick={{ fontSize: 9, fill: "#718096" }} axisLine={false} tickLine={false} />
                 <ZAxis range={[40, 60]} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#1A1D24", border: "1px solid #2D3748", borderRadius: "8px", color: "#E2E8F0" }}
-                  formatter={(value: number, name: string) => [value.toFixed(3), name]}
-                />
+                <Tooltip content={<TDCOScatterTooltip />} />
                 <Scatter data={scatterData}>
                   {scatterData.map((p, i) => (
                     <Cell key={i} fill={p.outcome === "survived" ? SURVIVED_COLOR : EXPIRED_COLOR} fillOpacity={0.7} />
