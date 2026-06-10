@@ -197,15 +197,23 @@ export default function MortalityFeaturesPage() {
                 tickLine={false}
                 width={110}
               />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1A1D24", border: "1px solid #2D3748", borderRadius: "8px", color: "#E2E8F0" }}
-                formatter={(value: number) => [(value * 100).toFixed(1) + "%", "Consensus Score"]}
-              />
-              <Bar dataKey="score" radius={[0, 3, 3, 0]}>
-                {consensusChartData.map((entry, i) => (
-                  <rect key={i} fill={`hsl(${280 - i * 8}, 60%, ${60 - i * 1.5}%)`} />
-                ))}
-              </Bar>
+              <Tooltip content={({ active, payload, label }: any) => {
+                if (!active || !payload || payload.length === 0) return null;
+                return (
+                  <div className="bg-dark-card border border-dark-border rounded-lg shadow-2xl p-3 min-w-[160px]">
+                    <div className="text-sm font-semibold text-dark-text-primary mb-2 pb-2 border-b border-dark-border">{label}</div>
+                    <div className="space-y-1 text-xs">
+                      {payload.map((entry: any, i: number) => (
+                        <div key={i} className="flex justify-between">
+                          <span className="text-dark-text-muted">Consensus Score</span>
+                          <span className="font-mono text-purple-400">{(entry.value * 100).toFixed(1)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }} />
+              <Bar dataKey="score" radius={[0, 3, 3, 0]} fill="#c084fc" fillOpacity={0.85} />
             </BarChart>
           </ResponsiveContainer>
         </div>
