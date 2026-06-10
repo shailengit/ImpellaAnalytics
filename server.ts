@@ -6,7 +6,9 @@ import * as XLSX from "xlsx";
 import * as ss from "simple-statistics";
 import * as fs from "fs";
 import { PatientData, processExcelData, trainAndPredict, checkEscalationAlerts, runPythonPredictions } from "./src/excel-parser";
+import type { PatientModelPerformance } from "./src/types";
 import { predictFromJsModels } from "./src/ml-models/predict";
+import { computeBootstrapPredictions, findSimilarPatients, computeTrajectoryMetrics } from "./src/ml-models/decision-support";
 
 const app = express();
 const PORT = 2956;
@@ -290,105 +292,13 @@ Weaning Score: ${patient.checklistResults?.weaningScore}/100, Weaning Candidate:
 // Decision Support Data Attachment (Phase 1: static JSON)
 // ---------------------------------------------------------------------------
 
-interface BootstrapPatient {
-  patientId: string;
-  prediction_mean: number | null;
-  ci_lower: number | null;
-  ci_upper: number | null;
-}
 
-interface BootstrapTargetData {
-  patients: BootstrapPatient[];
-  global_auc_mean: number;
-  global_auc_ci_lower: number;
-  global_auc_ci_upper: number;
-  n_bootstrap: number;
-  confidence_level: number;
-}
-
-interface BootstrapData {
-  survival: BootstrapTargetData;
-  escalation: BootstrapTargetData;
-  rv_dysfunction: BootstrapTargetData;
-}
-
-interface TrajectoryPatient {
-  patientId: string;
-  name: string;
-  matches: number;
-  n_valid: number;
-  delta_cpo_mean: number | null;
-  delta_cpo_ci_lower: number | null;
-  delta_cpo_ci_upper: number | null;
-  delta_papi_mean: number | null;
-  delta_papi_ci_lower: number | null;
-  delta_papi_ci_upper: number | null;
-  delta_lactate_mean: number | null;
-  delta_lactate_ci_lower: number | null;
-  delta_lactate_ci_upper: number | null;
-  escalation_rate: number | null;
-  survival_rate: number | null;
-  cluster_id: number | null;
-  cluster_name: string | null;
-}
-
-interface TrajectoryDataRaw {
-  patients: TrajectoryPatient[];
-  method: string;
-  k: number;
-  features: string[];
-}
-
-function loadDecisionSupportData(): {
-  bootstrap: BootstrapData | null;
-  trajectory: TrajectoryDataRaw | null;
-} {
+function loadModelPerformance(): PatientModelPerformance | undefined {
   try {
     const bootstrapPath = path.join(process.cwd(), "ml_output/decision_support_bootstrap.json");
-    const trajectoryPath = path.join(process.cwd(), "ml_output/patient_trajectories.json");
-    const bootstrap: BootstrapData = fs.existsSync(bootstrapPath)
-      ? JSON.parse(fs.readFileSync(bootstrapPath, "utf8"))
-      : null;
-    const trajectory: TrajectoryDataRaw = fs.existsSync(trajectoryPath)
-      ? JSON.parse(fs.readFileSync(trajectoryPath, "utf8"))
-      : null;
-    return { bootstrap, trajectory };
-  } catch (err) {
-    console.warn("Failed to load decision support JSON files:", err);
-    return { bootstrap: null, trajectory: null };
-  }
-}
-
-function attachDecisionSupportData(
-  patients: PatientData[],
-  bootstrap: BootstrapData | null,
-  trajectory: TrajectoryDataRaw | null,
-): PatientData[] {
-  if (!bootstrap && !trajectory) return patients;
-
-  // Build lookup maps
-  const bootstrapMaps: Record<string, Map<string, BootstrapPatient>> = {};
-  if (bootstrap) {
-    for (const target of ["survival", "escalation", "rv_dysfunction"] as const) {
-      const m = new Map<string, BootstrapPatient>();
-      for (const p of bootstrap[target].patients) {
-        m.set(p.patientId, p);
-      }
-      bootstrapMaps[target] = m;
-    }
-  }
-
-  const trajMap = new Map<string, TrajectoryPatient>();
-  if (trajectory) {
-    for (const p of trajectory.patients) {
-      trajMap.set(p.patientId, p);
-    }
-  }
-
-  // Global model performance (same for all patients)
-  let modelPerf: any = undefined;
-  if (bootstrap) {
-    modelPerf = {
+    if (!fs.existsSync(bootstrapPath)) return undefined;
+    const bootstrap = JSON.parse(fs.readFileSync(bootstrapPath, "utf8"));
+    return {
       survival: {
         global_auc_mean: bootstrap.survival.global_auc_mean,
         global_auc_ci_lower: bootstrap.survival.global_auc_ci_lower,
@@ -408,62 +318,39 @@ function attachDecisionSupportData(
         n_bootstrap: bootstrap.rv_dysfunction.n_bootstrap,
       },
     };
+  } catch {
+    return undefined;
   }
+}
 
-  return patients.map((p) => {
-    const pid = p.id;
+function attachDecisionSupportData(patients: PatientData[]): PatientData[] {
+  if (patients.length === 0) return patients;
 
-    // Build bootstrapCI
-    let bootstrapCI: any = undefined;
-    if (bootstrap) {
-      const surv = bootstrapMaps["survival"].get(pid);
-      const esc = bootstrapMaps["escalation"].get(pid);
-      const rv = bootstrapMaps["rv_dysfunction"].get(pid);
-      if (surv || esc || rv) {
-        bootstrapCI = {
-          survival: surv
-            ? { prediction_mean: surv.prediction_mean ?? 0, ci_lower: surv.ci_lower, ci_upper: surv.ci_upper }
-            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
-          escalation: esc
-            ? { prediction_mean: esc.prediction_mean ?? 0, ci_lower: esc.ci_lower, ci_upper: esc.ci_upper }
-            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
-          rv_dysfunction: rv
-            ? { prediction_mean: rv.prediction_mean ?? 0, ci_lower: rv.ci_lower, ci_upper: rv.ci_upper }
-            : { prediction_mean: 0, ci_lower: null, ci_upper: null },
-        };
-      }
+  // Compute bootstrap CIs live via JS engine
+  const bootstrapResults = computeBootstrapPredictions(patients, 500);
+
+  // Compute trajectory metrics live via JS engine
+  const trajectoryResults = patients.map((p) => {
+    const matches = findSimilarPatients(p, patients, 20);
+    const traj = computeTrajectoryMetrics(matches);
+    // Augment with cluster info from predictFromJsModels if available
+    const clusterResult = predictFromJsModels([p]).clusterResults[p.id];
+    if (clusterResult) {
+      traj.cluster_id = clusterResult.clusterLabel;
+      traj.cluster_name = clusterResult.clusterName;
     }
-
-    // Build trajectoryData
-    let trajectoryData: any = undefined;
-    const traj = trajMap.get(pid);
-    if (traj) {
-      trajectoryData = {
-        cluster_id: traj.cluster_id,
-        cluster_name: traj.cluster_name,
-        matches: traj.matches,
-        n_valid: traj.n_valid,
-        delta_cpo_mean: traj.delta_cpo_mean,
-        delta_cpo_ci_lower: traj.delta_cpo_ci_lower,
-        delta_cpo_ci_upper: traj.delta_cpo_ci_upper,
-        delta_papi_mean: traj.delta_papi_mean,
-        delta_papi_ci_lower: traj.delta_papi_ci_lower,
-        delta_papi_ci_upper: traj.delta_papi_ci_upper,
-        delta_lactate_mean: traj.delta_lactate_mean,
-        delta_lactate_ci_lower: traj.delta_lactate_ci_lower,
-        delta_lactate_ci_upper: traj.delta_lactate_ci_upper,
-        escalation_rate: traj.escalation_rate,
-        survival_rate: traj.survival_rate,
-      };
-    }
-
-    return {
-      ...p,
-      ...(bootstrapCI ? { bootstrapCI } : {}),
-      ...(trajectoryData ? { trajectoryData } : {}),
-      ...(modelPerf ? { modelPerformance: modelPerf } : {}),
-    };
+    return traj;
   });
+
+  // Global model performance (training-time metric — kept from static JSON)
+  const modelPerf = loadModelPerformance();
+
+  return patients.map((p, i) => ({
+    ...p,
+    bootstrapCI: bootstrapResults[i],
+    trajectoryData: trajectoryResults[i],
+    ...(modelPerf ? { modelPerformance: modelPerf } : {}),
+  }));
 }
 
 async function startServer() {
@@ -619,9 +506,8 @@ async function startServer() {
       },
     ];
 
-    // Load and attach pre-computed decision support data (Phase 1)
-    const { bootstrap, trajectory } = loadDecisionSupportData();
-    let enhancedPatients = attachDecisionSupportData(samplePatients, bootstrap, trajectory);
+    // Compute decision support data live via JS engine (Phase 2)
+    let enhancedPatients = attachDecisionSupportData(samplePatients);
 
     enhancedPatients = checkEscalationAlerts(enhancedPatients);
     const mlResult = await runPythonPredictions(enhancedPatients);
@@ -655,9 +541,8 @@ async function startServer() {
               "No valid patient data found in the Excel file. please ensure metrics are in rows and patients in columns.",
           });
       }
-      // Load and attach pre-computed decision support data (Phase 1)
-      const { bootstrap, trajectory } = loadDecisionSupportData();
-      patients = attachDecisionSupportData(patients, bootstrap, trajectory);
+      // Compute decision support data live via JS engine (Phase 2)
+      patients = attachDecisionSupportData(patients);
 
       patients = checkEscalationAlerts(patients);
       const mlResult = await runPythonPredictions(patients);
