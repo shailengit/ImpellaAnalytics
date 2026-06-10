@@ -690,7 +690,12 @@ async function startServer() {
       if (fs.existsSync(qualityPath)) {
         quality = JSON.parse(fs.readFileSync(qualityPath, "utf8"));
       }
-      res.json({ profiles, quality });
+      const pcaPath = path.join(process.cwd(), "ml_output/clusters/pca_coordinates.json");
+      let pcaCoordinates = null;
+      if (fs.existsSync(pcaPath)) {
+        pcaCoordinates = JSON.parse(fs.readFileSync(pcaPath, "utf8"));
+      }
+      res.json({ profiles, quality, pcaCoordinates });
     } catch (err) {
       console.error("Cluster profiles error:", err);
       res.status(500).json({ error: "Failed to load cluster profiles" });
