@@ -337,6 +337,7 @@ def main():
                "cohort_outcome", "cohort_age", "cohort_gender", "indication",
                "physician", "rhc_prior_72h", "rhc_timing_days", "support_days",
                "target_survival", "target_escalation", "target_rv_dysfunction",
+               "mcs_escalation",
                "pre_septal_flattening", "pre_atrial_bowing",
                "post_septal_flattening", "post_atrial_bowing"}
     feature_cols = [c for c in df.columns if c not in exclude and pd.api.types.is_numeric_dtype(df[c])]
